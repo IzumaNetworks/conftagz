@@ -33,9 +33,11 @@ func main() {
 
 	_, err2 := conftagz.Process(nil, &config)
 	if err2 != nil {
-		log.Fatalf("Error from conftags: %v\n", err2)
+		log.Fatalf("Config is bad: %v\n", err2)
+	} else {
+		fmt.Printf("Config good.\n")
 	}
 
-	fmt.Printf("done. %v\n", config)
+	fmt.Printf("Config: %v\n", config)
 
 }
