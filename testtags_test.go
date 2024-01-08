@@ -7,17 +7,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// see envlookup_test.go for the struct definitions
 func TestTestFieldsFail(t *testing.T) {
 	mystruct := MyStruct{"Value1", "Real Tomatoes", 33}
 
 	_, err := RunTestFlags(&mystruct, nil)
-	assert.EqualError(t, err, "value 33 ! >= 1024")
+	assert.EqualError(t, err, "field Field3: value 33 ! >= 1024")
 }
 func TestTestFieldsFail2(t *testing.T) {
 	mystruct := MyStruct{"Value1", "meh", 1025}
 
 	_, err := RunTestFlags(&mystruct, nil)
-	assert.EqualError(t, err, "value meh !~ regexp")
+	assert.EqualError(t, err, "field Field2: value \"meh\" !~ regexp R.*[Ss]{1}$")
 }
 
 func TestTestFieldsPass(t *testing.T) {
@@ -39,35 +40,6 @@ func TestTestFieldsPass(t *testing.T) {
 	assert.Equal(t, mystruct.Field3, 1025)
 }
 
-// assumes PATH is there
-// func TestTestFields2(t *testing.T) {
-// 	mystruct := MyStruct2{}
-
-// 	result, err := SubsistuteDefaults(&mystruct, nil)
-// 	if err != nil {
-// 		t.Errorf("Unexpected error: %v", err)
-// 	}
-// 	debugf("result: %v\n", result)
-// 	assert.Equal(t, 0, len(result))
-// }
-
-// func TestTestFields3(t *testing.T) {
-// 	mystruct := MyStruct{}
-// 	expected := []string{"Field1", "Field2", "Field3"}
-
-// 	result, err := SubsistuteDefaults(&mystruct, &EnvFieldSubstOpts{ThrowErrorIfEnvMissing: true})
-// 	if err != nil {
-// 		t.Errorf("Unexpected error: %v", result)
-// 	}
-
-// 	if !reflect.DeepEqual(result, expected) {
-// 		t.Errorf("Expected %v, but got %v", expected, result)
-// 	}
-
-//		assert.Equal(t, "Apple", mystruct.Field1)
-//		assert.Equal(t, "Banana", mystruct.Field2)
-//		assert.Equal(t, 999, mystruct.Field3)
-//	}
 func TestTestFieldsWithStruct(t *testing.T) {
 	str := "Elastic"
 	mystruct := MyStructWithStruct{"Appppple", "Bolivia", 1, "?", &str, nil, &InnerStruct{"123"}, InnerStruct{"LALA"}}
@@ -184,94 +156,96 @@ func TestTestCustomFunc(t *testing.T) {
 	assert.Equal(t, "innerstuff", mystruct.DefaultStruct.Stuff1)
 }
 
-// func TestTestFieldsWithStructStringExists(t *testing.T) {
-// 	newstring := "NewString"
-// 	mystruct := MyStructWithStruct{"", "Value2", 0, "?", &newstring, nil, nil, InnerStruct{""}}
+// and now for the fun stuff
+func TestTestSliceOfPointersToStruct(t *testing.T) {
+	mystruct := MyStructWithSliceOfPointersToStruct{"APPPPLE", nil, nil, []int{1, 2, 3}, &InnerStruct{"inner1"}}
 
-// 	expected := []string{"Field1", "Field3", "Field6", "InnerPtr.FieldInner1", "Inner.FieldInner1"}
+	inner1 := InnerStruct{"inner1"}
+	inner2 := InnerStruct{"inner2"}
+	inner1_2 := InnerStruct{"inner1_2"}
 
-// 	result, err := SubsistuteDefaults(&mystruct, nil)
-// 	if err != nil {
-// 		t.Errorf("Unexpected error: %v", err)
-// 	}
+	slice := []*InnerStruct{&inner1, &inner2}
+	mystruct.SliceField = slice
+	slice2 := []InnerStruct{inner1_2}
+	mystruct.SliceField2 = slice2
 
-// 	if !reflect.DeepEqual(result, expected) {
-// 		t.Errorf("Expected %v, but got %v", expected, result)
-// 	}
+	testslicefunc_ran := false
 
-// 	assert.Equal(t, mystruct.Field1, "Apple")
-// 	assert.Equal(t, mystruct.Field3, 999)
-// 	assert.Equal(t, mystruct.Field2, "Value2")
-// 	assert.Equal(t, mystruct.Field4, "?")
-// 	assert.Equal(t, "NewString", *mystruct.Field5)
-// 	assert.Equal(t, int32(701), *mystruct.Field6)
-// 	//	assert.Equal(t, mystruct.InnerPtr.FieldInner1, "InnerApple")
-// 	assert.Equal(t, "InnerApple", mystruct.Inner.FieldInner1)
-// }
+	testslicefunc := func(val interface{}, fieldname string) bool {
+		valslice, ok := val.([]int)
+		testslicefunc_ran = true
+		if !ok {
+			t.Errorf("Expected slice, but got %v", val)
+			return false
+		}
+		if len(valslice) < 3 {
+			return false
+		}
+		if !(valslice[2] > valslice[1] && valslice[1] > valslice[0]) {
+			return false
+		}
+		return true
+	}
 
-// func TestTestFieldWithStruct3(t *testing.T) {
-// 	mystruct := MyStruct3{"Value1", "", 3, nil, nil}
+	RegisterTestFunc("sliceintstest", testslicefunc)
 
-// 	expected := []string{"Field2", "Inner2Ptr.Stuff1"}
+	expected := []string{"Field1", "SliceField[0].FieldInner1", "SliceField[1].FieldInner1", "SliceField2[0].FieldInner1", "SliceInts", "InnerStructCustom.FieldInner1"}
 
-// 	result, err := SubsistuteDefaults(&mystruct, nil)
-// 	if err != nil {
-// 		t.Errorf("Unexpected error: %v", err)
-// 	}
+	result, err := RunTestFlags(&mystruct, nil)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
 
-// 	if !reflect.DeepEqual(result, expected) {
-// 		t.Errorf("Expected %v, but got %v", expected, result)
-// 	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, but got %v", expected, result)
+	}
 
-// 	assert.Equal(t, mystruct.Field1, "Value1")
-// 	assert.Equal(t, mystruct.Field2, "Banana")
-// 	assert.Equal(t, mystruct.Field3, 3)
-// 	assert.Equal(t, "InnerApple2", mystruct.Inner2Ptr.Stuff1)
-// 	// test 'skip' tag
-// 	assert.Nil(t, mystruct.InnerPtr)
-// }
+	assert.Equal(t, mystruct.Field1, "APPPPLE")
+	assert.Equal(t, mystruct.SliceField[0].FieldInner1, "inner1")
+	assert.Equal(t, mystruct.SliceField[1].FieldInner1, "inner2")
+	assert.True(t, testslicefunc_ran)
 
-// func TestDefaultFieldsWithStruct3NonNilStructs(t *testing.T) {
-// 	mystruct := MyStruct3{"", "", 0, &InnerStruct2{}, &InnerStruct2{}}
+}
 
-// 	expected := []string{"Field1", "Field2", "Field3", "Inner2Ptr.Stuff1"}
+func TestTestSliceIntsFalseCustom(t *testing.T) {
+	mystruct := MyStructWithSliceOfPointersToStruct{"APPPPLE", nil, nil, []int{1, 2, 3}, nil}
 
-// 	result, err := SubsistuteDefaults(&mystruct, nil)
-// 	if err != nil {
-// 		t.Errorf("Unexpected error: %v", err)
-// 	}
+	testslicefunc_ran := false
 
-// 	if !reflect.DeepEqual(result, expected) {
-// 		t.Errorf("Expected %v, but got %v", expected, result)
-// 	}
+	testslicefunc := func(val interface{}, fieldname string) bool {
+		valslice, ok := val.([]int)
+		testslicefunc_ran = true
+		if !ok {
+			t.Errorf("Expected slice, but got %v", val)
+			return false
+		}
+		if len(valslice) < 3 {
+			return false
+		}
+		if !(valslice[2] > valslice[1] && valslice[1] > valslice[0]) {
+			return false
+		}
+		// returns false no matter...
+		return false
+	}
 
-// 	assert.Equal(t, "Apple", mystruct.Field1)
-// 	assert.Equal(t, 999, mystruct.Field3)
+	RegisterTestFunc("sliceintstest", testslicefunc)
 
-// 	assert.Equal(t, "InnerApple2", mystruct.Inner2Ptr.Stuff1)
-// 	// this was a skip
-// 	assert.Equal(t, "", mystruct.InnerPtr.Stuff1)
-// }
+	expected := []string{"Field1", "SliceInts"}
 
-// func TestDefaultFieldsWithSlice(t *testing.T) {
-// 	mystruct := MyStructWithSlice{"", nil}
+	result, err := RunTestFlags(&mystruct, nil)
+	var errstr string
+	if err != nil {
+		//		t.Errorf("Unexpected error: %v", err)
+		errstr = err.Error()
+	}
 
-// 	expected := []string{"Field1", "SliceField"}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, but got %v", expected, result)
+	}
 
-// 	result, err := SubsistuteDefaults(&mystruct, nil)
-// 	if err != nil {
-// 		t.Errorf("Unexpected error: %v", err)
-// 	}
+	assert.Equal(t, mystruct.Field1, "APPPPLE")
+	assert.Regexp(t, `value for field SliceInts.*sliceintstest`, errstr)
+	assert.True(t, testslicefunc_ran)
 
-// 	if !reflect.DeepEqual(result, expected) {
-// 		t.Errorf("Expected %v, but got %v", expected, result)
-// 	}
-
-// 	expectedslice := []string{"Apple", "Banana"}
-
-// 	assert.Equal(t, mystruct.Field1, "Apple")
-// 	if !reflect.DeepEqual(mystruct.SliceField, expectedslice) {
-// 		t.Errorf("Expected %v, but got %v", expectedslice, mystruct.SliceField)
-// 	}
-
-// }
+}

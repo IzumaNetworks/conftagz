@@ -36,18 +36,14 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 		parsedVals := strings.Split(defaultval, ",")
 		k := sliceValue.Type().Elem().Kind()
 		switch k {
-		// TODO - add support for Ptr to String and Ints
+		case reflect.Ptr:
+			// TODO add support for Ptr to Structs
 		case reflect.String:
 			for _, parsedVal := range parsedVals {
 				// Change the value of the field to the tag value
 				sliceValue.Set(reflect.Append(sliceValue, reflect.ValueOf(parsedVal)))
 			}
-
-			// if fieldValue.IsZero() {
-			// 	// Change the value of the field to the tag value
-			// 	fieldValue.SetString(defaultval)
-			// 	ret = append(ret, addParentPath(parentpath, fieldName))
-			// }
+			// TODO add float
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			for _, parsedVal := range parsedVals {
 				val, err := StringToInt64(parsedVal)
@@ -55,10 +51,27 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 					return fmt.Errorf("default value %s not a number", defaultval)
 				}
 				// Change the value of the field to the tag value
-				sliceValue.Set(reflect.Append(sliceValue, reflect.ValueOf(val)))
+				if reflect.ValueOf(val).CanConvert(sliceValue.Type().Elem()) {
+					sliceValue.Set(reflect.Append(sliceValue, reflect.ValueOf(val).Convert(sliceValue.Type().Elem())))
+				} else {
+					return fmt.Errorf("default value %s has number out of range for %s", defaultval, sliceValue.Type().Elem().String())
+				}
+			}
+		case reflect.Float64, reflect.Float32:
+			for _, parsedVal := range parsedVals {
+				val, err := StringToFloat64(parsedVal)
+				if err != nil {
+					return fmt.Errorf("default value %s not a number", defaultval)
+				}
+				// Change the value of the field to the tag value
+				if reflect.ValueOf(val).CanConvert(sliceValue.Type().Elem()) {
+					sliceValue.Set(reflect.Append(sliceValue, reflect.ValueOf(val).Convert(sliceValue.Type().Elem())))
+				} else {
+					return fmt.Errorf("default value %s has number out of range for %s", defaultval, sliceValue.Type().Elem().String())
+				}
 			}
 		default:
-			return fmt.Errorf("default for %s underlying type unsupported (setDefault)", k.String())
+			debugf("default: default for %s underlying type unsupported (setDefault)", k.String())
 		}
 		return nil
 	}
@@ -68,7 +81,7 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 		matches := matchDefaultFuncRE.FindAllStringSubmatch(defaultval, -1)
 		if len(matches) > 0 {
 			if len(matches[0]) > 1 {
-				debugf("Found a default func (setDefault): %s\n", matches[0][1])
+				debugf("default: Found a default func (setDefault): %s\n", matches[0][1])
 				f = defaultFuncs[matches[0][1]]
 			}
 		}
@@ -146,7 +159,7 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 		matches := matchDefaultFuncRE.FindAllStringSubmatch(defaultval, -1)
 		if len(matches) > 0 {
 			if len(matches[0]) > 1 {
-				debugf("Found a default func (setDefaultPtr): %s\n", matches[0][1])
+				debugf("default: Found a default func (setDefaultPtr): %s\n", matches[0][1])
 				f = defaultFuncs[matches[0][1]]
 			}
 		}
@@ -219,7 +232,7 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 		// Get the value of the input. This will be a reflect.Value
 		valuePtr := reflect.ValueOf(somestruct)
 		if valuePtr.Kind() != reflect.Ptr {
-			return fmt.Errorf("not a pointer to a struct")
+			return fmt.Errorf("not a pointer to a struct: was: %s", valuePtr.Kind().String())
 		}
 		inputValue := valuePtr.Elem()
 		// Get the type of the input. This will be a reflect.Type
@@ -243,12 +256,15 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 			if skipField(confops) {
 				continue
 			}
+			if defaultSkip(confops) {
+				continue
+			}
 			if skipIfZero(confops) && len(defaultval) > 0 {
 				err = fmt.Errorf("conf:skipzero not supported with default tag: %s", field.Name)
 				return
 			}
 
-			debugf("Field Name: %s, Default val: %s\n", field.Name, defaultval)
+			debugf("default: Field Name: %s, Default val: %s\n", field.Name, defaultval)
 			// if len(defaultval) > 0 {
 			// Get the field value
 			fieldValue := inputValue.FieldByName(field.Name)
@@ -265,6 +281,7 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 				if fieldValue.IsNil() {
 					debugf("Field %s is nil\n", field.Name)
 					if skipIfNil(confops) {
+						debugf("default: skipping b/c of skipnil tag %s\n", field.Name)
 						continue
 					}
 					// check if the default tag is func
@@ -273,8 +290,8 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 					matches := matchDefaultFuncRE.FindAllStringSubmatch(defaultval, -1)
 					if len(matches) > 0 {
 						if len(matches[0]) > 1 {
-							debugf("Found a default func (if Ptr nil): %s\n", matches[0][1])
 							f = defaultFuncs[matches[0][1]]
+							debugf("Found a default func (if Ptr nil): %s %p\n", matches[0][1], f)
 						}
 					}
 					// if so, then we let it do the work since this is a pointer
@@ -291,7 +308,7 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 					switch t.Elem().Kind() {
 					case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 						if field.Type.Kind() == reflect.Ptr {
-							debugf("Ptr: Underlying fundamental type: %s\n", t.Elem().Kind().String())
+							debugf("default: Ptr: Underlying fundamental type: %s\n", t.Elem().Kind().String())
 							if f != nil {
 								if fresultType.Kind() == reflect.Ptr && fresultType.Elem().Kind() == t.Elem().Kind() {
 									fieldValue.Set(reflect.ValueOf(fresult))
@@ -308,7 +325,7 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 						}
 						if field.Type.Kind() == reflect.Slice {
 							if len(defaultval) > 0 {
-								debugf("Slice: Underlying fundamental type: %s\n", t.Elem().Kind().String())
+								debugf("default: Slice: Underlying fundamental type: %s\n", t.Elem().Kind().String())
 								fieldValue.Set(reflect.MakeSlice(fieldValue.Type(), 0, 0))
 							}
 						}
@@ -316,7 +333,7 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 						debugf("Ptr: Underlying struct type: %s\n", t.Elem().Kind().String())
 						if f != nil {
 							if fresultType.Kind() == reflect.Ptr && fieldValue.Type().Elem() == fresultType.Elem() {
-								debugf("Ptr: Func: Underlying struct type: %s\n", t.Elem().String())
+								debugf("default: Ptr: Func: Underlying struct type: %s\n", t.Elem().String())
 								fieldValue.Set(reflect.ValueOf(fresult))
 								ret = append(ret, addParentPath(parentpath, field.Name))
 								continue
@@ -324,12 +341,16 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 								return fmt.Errorf("default func %s did not return a ptr to struct of the correct type: ", matches[0][1])
 							}
 						} else {
-							fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+							// no function? ok - then if its a Ptr to a struct, we create it
+							// otherwise we ignore it
+							if field.Type.Kind() == reflect.Ptr {
+								fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+							}
 						}
 					case reflect.Slice:
-						debugf("Slice: Underlying slice type: %s\n", t.Elem().Kind().String())
+						debugf("default: Slice: Underlying slice type: %s\n", t.Elem().Kind().String())
 						if fresultType.Kind() == reflect.Slice && fieldValue.Type().Elem() == fresultType.Elem() {
-							debugf("Slice: Func: Underlying struct type: %s\n", t.Elem().String())
+							debugf("default: Slice: Func: Underlying struct type: %s\n", t.Elem().String())
 							fieldValue.Set(reflect.ValueOf(fresult))
 							ret = append(ret, addParentPath(parentpath, field.Name))
 							continue
@@ -337,7 +358,7 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 							fieldValue.Set(reflect.MakeSlice(fieldValue.Type().Elem(), 0, 0))
 						}
 					default:
-						debugf("ignoring: default for %s underlying type unsupported\n", field.Name)
+						debugf("default: ignoring: default for %s underlying type unsupported\n", field.Name)
 						continue
 						// default:
 						// 	debugf("Got a NON-fundamental type: %s %s which is a %s\n", t.Kind().String(), t.Elem().String(), t.Elem().Kind().String())
@@ -351,13 +372,34 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 					//					debugf("Field %s is NOT nil\n", field.Name)
 					// TODO - add support for Slice here
 					if field.Type.Kind() == reflect.Slice {
-						debugf("FIXME %s\n", defaultval)
+						if fieldValue.Len() < 1 {
+							err = setDefaultSlice(fieldValue, defaultval)
+							if err != nil {
+								return
+							}
+							ret = append(ret, addParentPath(parentpath, field.Name))
+						} else {
 
-						err = setDefaultSlice(fieldValue, defaultval)
-						if err != nil {
-							return
+							if field.Type.Elem().Kind() == reflect.Ptr && field.Type.Elem().Elem().Kind() == reflect.Struct {
+								for n := 0; n < fieldValue.Len(); n++ {
+									name := fmt.Sprintf("%s[%d]", field.Name, n)
+									debugf("default: slice of struct ptr %s\n", name)
+									err := innerSubst(addParentPath(parentpath, name), fieldValue.Index(n).Elem().Addr().Interface())
+									if err != nil {
+										return err
+									}
+								}
+							} else if field.Type.Elem().Kind() == reflect.Struct {
+								for n := 0; n < fieldValue.Len(); n++ {
+									name := fmt.Sprintf("%s[%d]", field.Name, n)
+									debugf("default: slice of struct %s\n", name)
+									err := innerSubst(addParentPath(parentpath, name), fieldValue.Index(n).Addr().Interface())
+									if err != nil {
+										return err
+									}
+								}
+							}
 						}
-						ret = append(ret, addParentPath(parentpath, field.Name))
 						// TODO - add support for Slice here
 					} else
 
@@ -387,7 +429,7 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 				}
 			} else if field.Type.Kind() == reflect.Slice {
 				// recurse
-				debugf("FIXME 2\n")
+				debugf("default: FIXME 2\n")
 
 			} else if fieldValue.CanSet() {
 				if len(defaultval) > 0 {

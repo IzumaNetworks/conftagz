@@ -159,7 +159,10 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 			if skipField(confops) {
 				continue
 			}
-			debugf("Field Name: %s, Env val: %s\n", field.Name, tag)
+			if envSkip(confops) {
+				continue
+			}
+			debugf("env: Field Name: %s, Env val: %s\n", field.Name, tag)
 			// if len(defaultval) > 0 {
 			// Get the field value
 			fieldValue := inputValue.FieldByName(field.Name)
@@ -175,19 +178,19 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 				// value
 				t := fieldValue.Type()
 				if fieldValue.IsNil() {
-					debugf("Field %s is nil\n", field.Name)
+					debugf("env: Field %s is nil\n", field.Name)
 					if skipIfNil(confops) {
 						continue
 					}
 					switch t.Elem().Kind() {
 					case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-						debugf("Ptr: Underlying fundamental type: %s\n", t.Elem().Kind().String())
+						debugf("env: Ptr: Underlying fundamental type: %s\n", t.Elem().Kind().String())
 						// Does an env refenced exist?
 						if _, ok := m[tag]; ok {
 							fieldValue.Set(reflect.New(t.Elem()))
 						}
 					default:
-						debugf("Got a NON-fundamental type: %s %s which is a %s\n", t.Kind().String(), t.Elem().String(), t.Elem().Kind().String())
+						debugf("env: Got a NON-fundamental type: %s %s which is a %s\n", t.Kind().String(), t.Elem().String(), t.Elem().Kind().String())
 						if t.Elem().Kind() == reflect.Struct {
 							fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
 						} else {

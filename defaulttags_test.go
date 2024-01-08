@@ -233,3 +233,43 @@ func TestDefaultCustomFunc(t *testing.T) {
 	assert.Equal(t, "field2funcval", *mystruct.Field2)
 	assert.Equal(t, "specialsauce", mystruct.DefaultStruct.Stuff1)
 }
+
+func TestDefaultSliceOfPointersToStruct(t *testing.T) {
+	//	mystruct := MyStructWithSliceOfPointersToStruct{"APPPPLE", nil, []int{1, 2, 3}}
+	mystruct := MyStructWithSliceOfPointersToStruct{"", nil, nil, nil, nil}
+
+	inner1 := InnerStruct{""}
+	inner2 := InnerStruct{""}
+	inner1_2 := InnerStruct{""}
+
+	slice := []*InnerStruct{&inner1, &inner2}
+	mystruct.SliceField = slice
+
+	slice2 := []InnerStruct{inner1_2}
+	mystruct.SliceField2 = slice2
+
+	innerstructcustomfunc := func(fieldname string) interface{} {
+		return &InnerStruct{
+			FieldInner1: "I123e",
+		}
+	}
+
+	RegisterDefaultFunc("innerstructcustom", innerstructcustomfunc)
+
+	expected := []string{"Field1", "SliceField[0].FieldInner1", "SliceField[1].FieldInner1", "SliceField2[0].FieldInner1", "SliceInts", "InnerStructCustom"}
+
+	result, err := SubsistuteDefaults(&mystruct, nil)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, but got %v", expected, result)
+	}
+
+	assert.Equal(t, mystruct.Field1, "Apple")
+	assert.Equal(t, mystruct.SliceField[0].FieldInner1, "InnerApple")
+	assert.Equal(t, mystruct.SliceField[1].FieldInner1, "InnerApple")
+	assert.Equal(t, mystruct.SliceField2[0].FieldInner1, "InnerApple")
+	assert.Equal(t, mystruct.InnerStructCustom.FieldInner1, "I123e")
+}

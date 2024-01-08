@@ -53,6 +53,30 @@ func mustEnv(confops map[string]string) bool {
 	return false
 }
 
+// The env var processing is enitrely skipped
+// for this field. Useful if you don't want a blank struct created
+// while looking for env vars
+func envSkip(confops map[string]string) bool {
+	if _, ok := confops["envskip"]; ok {
+		return true
+	}
+	return false
+}
+
+func defaultSkip(confops map[string]string) bool {
+	if _, ok := confops["defaultskip"]; ok {
+		return true
+	}
+	return false
+}
+
+func testSkip(confops map[string]string) bool {
+	if _, ok := confops["testskip"]; ok {
+		return true
+	}
+	return false
+}
+
 // true if the envvar should always replace a value
 // if the env var exists
 func preferEnv(confops map[string]string) bool {

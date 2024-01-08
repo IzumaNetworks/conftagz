@@ -70,6 +70,14 @@ type AStructWithCustom struct {
 	DefaultStruct *InnerStruct2 `yaml:"inner" default:"$(fieldinnerstruct2)" test:"$(fieldinnerstruct2test)"`
 }
 
+type MyStructWithSliceOfPointersToStruct struct {
+	Field1            string         `yaml:"important" env:"Important" default:"Apple" test:"~A.*[Ee]{1}"`
+	SliceField        []*InnerStruct `yaml:"slice"`
+	SliceField2       []InnerStruct  `yaml:"slice"`
+	SliceInts         []int          `yaml:"sliceints" default:"1,2,3" test:"$(sliceintstest)"`
+	InnerStructCustom *InnerStruct   `yaml:"innerstructcustom" default:"$(innerstructcustom)"`
+}
+
 func TestEnvFieldSubstitutionFromMap(t *testing.T) {
 	mystruct := MyStruct{"Value1", "Value2", 3}
 

@@ -89,7 +89,7 @@ func runTestFunc(op *testOp, val reflect.Value, fieldName string) (err error) {
 			err = fmt.Errorf("value for field %s !$(%s)", fieldName, op.testFuncName)
 		}
 	default:
-		debugf("unsupported type for TESTFUNC\n")
+		debugf("test: unsupported type for TESTFUNC\n")
 		err = fmt.Errorf("value unsupported type for TESTFUNC")
 	}
 	return
@@ -245,7 +245,7 @@ func runTest(op *testConfOp, val reflect.Value, fieldName string) (err error) {
 			case reflect.String:
 				debugf("test REGEX %s\n", op.ValString)
 				if !op.Regexp.Match([]byte(val.String())) {
-					err = fmt.Errorf("value %s !~ regexp", val.String())
+					err = fmt.Errorf("value \"%s\" !~ regexp %s", val.String(), op.ValString)
 				}
 			default:
 				err = fmt.Errorf("value for field - REGEX test operator must be on a string or string* field")
@@ -309,7 +309,7 @@ func parseTestVal(tagval string) (ret *testConfOp, err error) {
 			matches := matchTestFuncRE.FindAllStringSubmatch(teststr, -1)
 			if len(matches) > 0 {
 				if len(matches[0]) > 1 {
-					debugf("Found a default func (if Ptr nil): %s\n", matches[0][1])
+					debugf("test: Found a default func (if Ptr nil): %s\n", matches[0][1])
 					f = testFuncs[matches[0][1]]
 				}
 			}
@@ -367,7 +367,7 @@ func parseTestVal(tagval string) (ret *testConfOp, err error) {
 					return
 				}
 				op = &testOp{Operator: opn, ValString: teststr[n+1:]}
-				debugf("ValString: %s\n", op.ValString)
+				debugf("test: ValString: %s\n", op.ValString)
 				switch opn {
 				case EQ:
 					val, err := StringToInt64(op.ValString)
@@ -435,18 +435,21 @@ func RunTestFlags(somestruct interface{}, opts *TestFieldSubstOpts) (ret []strin
 			if skipField(confops) {
 				continue
 			}
+			if testSkip(confops) {
+				continue
+			}
 
 			var op *testConfOp
 			// parse testval
 			if len(testval) > 0 {
 				op, err = parseTestVal(testval)
 				if err != nil {
-					err = fmt.Errorf("test tag for field %s: %s (%s)", field.Name, err.Error(), testval)
+					err = fmt.Errorf("parse error for test tag for field %s: %s (%s)", addParentPath(parentpath, field.Name), err.Error(), testval)
 					return
 				}
 			}
 
-			debugf("Field Name: %s, Test op: %s\n", field.Name, testval)
+			debugf("test: Field Name: %s, Test op: %s\n", field.Name, testval)
 			// if len(defaultval) > 0 {
 			// Get the field value
 			fieldValue := inputValue.FieldByName(field.Name)
@@ -462,14 +465,14 @@ func RunTestFlags(somestruct interface{}, opts *TestFieldSubstOpts) (ret []strin
 				// value
 				t := fieldValue.Type()
 				if fieldValue.IsNil() {
-					debugf("Field %s is nil\n", field.Name)
+					debugf("test: Field %s is nil\n", field.Name)
 					if skipIfNil(confops) {
 						continue
 					}
 					switch t.Elem().Kind() {
 					case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 						if field.Type.Kind() == reflect.Ptr {
-							debugf("Ptr: Underlying fundamental type: %s\n", t.Elem().Kind().String())
+							debugf("test: Ptr: Underlying fundamental type: %s\n", t.Elem().Kind().String())
 							if op != nil {
 								fieldValue.Set(reflect.New(t.Elem()))
 							}
@@ -479,15 +482,17 @@ func RunTestFlags(somestruct interface{}, opts *TestFieldSubstOpts) (ret []strin
 						// 	fieldValue.Set(reflect.MakeSlice(fieldValue.Type(), 0, 0))
 						// }
 					case reflect.Struct:
-						debugf("Ptr: Underlying struct type: %s\n", t.Elem().Kind().String())
-						fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+						debugf("test: Ptr: Underlying struct type: %s\n", t.Elem().Kind().String())
+						if field.Type.Kind() == reflect.Ptr { // i.e. not a slice
+							fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+						}
 					// case reflect.Slice:
 					// 	debugf("Ptr: Underlying slice type: %s\n", t.Elem().Kind().String())
 					// 	fieldValue.Set(reflect.MakeSlice(fieldValue.Type().Elem(), 0, 0))
 					default:
-						debugf("test for %s underlying type unsupported\n", field.Name)
+						debugf("test: test for %s underlying type unsupported\n", field.Name)
 						if op != nil {
-							err = fmt.Errorf("test for %s underlying type unsupported", field.Name)
+							err = fmt.Errorf("test for %s underlying type unsupported", addParentPath(parentpath, field.Name))
 							return
 						}
 						// default:
@@ -498,26 +503,51 @@ func RunTestFlags(somestruct interface{}, opts *TestFieldSubstOpts) (ret []strin
 				}
 
 				if !fieldValue.IsNil() {
-					//					debugf("Field %s is NOT nil\n", field.Name)
-					// TODO - add support for Slice here
 					if field.Type.Kind() == reflect.Slice {
-						debugf("skip slice (test) %s\n", testval)
-
-						// err = setDefaultSlice(fieldValue, defaultval)
-						// if err != nil {
-						// 	return
-						// }
-						// ret = append(ret, addParentPath(parentpath, field.Name))
-						// TODO - add support for Slice here
+						if op != nil {
+							err = runTest(op, fieldValue, field.Name)
+							ret = append(ret, addParentPath(parentpath, field.Name))
+							if err != nil {
+								err = fmt.Errorf("field %s: %s", addParentPath(parentpath, field.Name), err.Error())
+								return
+							}
+						} else {
+							for i := 0; i < fieldValue.Len(); i++ {
+								debugf("test: slice: %s[%d]\n", field.Name, i)
+								switch field.Type.Elem().Kind() {
+								case reflect.Ptr:
+									switch field.Type.Elem().Elem().Kind() {
+									case reflect.Struct:
+										err := innerTest(addParentPath(parentpath, fmt.Sprintf("%s[%d]", field.Name, i)), fieldValue.Index(i).Elem().Addr().Interface())
+										if err != nil {
+											return err
+										}
+									default:
+										debugf("test: unsupported slice of type %s - ignoring (2)\n", field.Type.Elem().Kind().String())
+									}
+								case reflect.Struct:
+									err := innerTest(addParentPath(parentpath, fmt.Sprintf("%s[%d]", field.Name, i)), fieldValue.Index(i).Addr().Interface())
+									if err != nil {
+										return err
+									}
+								default:
+									debugf("test: unsupported slice of type %s - ignoring\n", field.Type.Elem().Kind().String())
+								}
+							}
+						}
 					} else
 
 					// is this a Ptr to a struct?
 					if t.Elem().Kind() == reflect.Struct {
 						// see if there is a test tag for this struct?
 						if op != nil {
-							debugf("found test func for this struct ptr!\n")
-							runTest(op, fieldValue, field.Name)
+							debugf("test: found test func for this struct ptr!\n")
+							err = runTest(op, fieldValue, field.Name)
 							ret = append(ret, addParentPath(parentpath, field.Name))
+							if err != nil {
+								err = fmt.Errorf("field %s: %s", addParentPath(parentpath, field.Name), err.Error())
+								return err
+							}
 						} else {
 							err := innerTest(addParentPath(parentpath, field.Name), fieldValue.Elem().Addr().Interface())
 							if err != nil {
@@ -528,11 +558,12 @@ func RunTestFlags(somestruct interface{}, opts *TestFieldSubstOpts) (ret []strin
 						// nope then its just a fundamental type
 						if op != nil {
 							if fieldValue.Elem().IsZero() && skipIfZero(confops) {
-								debugf("skip zero (test)\n")
+								debugf("test: skip zero (test)\n")
 								continue
 							}
 							err = runTest(op, fieldValue.Elem(), field.Name)
 							if err != nil {
+								err = fmt.Errorf("field %s: %s", addParentPath(parentpath, field.Name), err.Error())
 								return
 							}
 							ret = append(ret, addParentPath(parentpath, field.Name))
@@ -549,22 +580,25 @@ func RunTestFlags(somestruct interface{}, opts *TestFieldSubstOpts) (ret []strin
 				}
 			} else if field.Type.Kind() == reflect.Slice {
 				// recurse
-				debugf("skip slice 2\n")
+				debugf("test: skip slice 2\n")
 
 			} else if fieldValue.CanSet() {
 				if op != nil {
 					if fieldValue.IsZero() && skipIfZero(confops) {
-						debugf("skip zero (test) 2\n")
+						debugf("test: skip zero (test) 2\n")
 						continue
 					}
 					err = runTest(op, fieldValue, field.Name)
 					if err != nil {
+						err = fmt.Errorf("field %s: %s", addParentPath(parentpath, field.Name), err.Error())
 						return
 					}
 					ret = append(ret, addParentPath(parentpath, field.Name))
 				}
 			} else {
-				return fmt.Errorf("test for %s cannot be run", field.Name)
+				if op != nil {
+					return fmt.Errorf("test for %s cannot be run", field.Name)
+				}
 			}
 			// }
 
