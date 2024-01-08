@@ -15,8 +15,8 @@ type Server struct {
 }
 type SSLStuff struct {
 	// cert and key should be at least 10 chars long
-	Cert string `yaml:"cert" env:"SSL_CERT" test:"~.{10,}"}"`
-	Key  string `yaml:"key" env:"SSL_KEY" test:"~.{10,}"}"`
+	Cert string `yaml:"cert" env:"SSL_CERT" test:"~.{10,}"`
+	Key  string `yaml:"key" env:"SSL_KEY" test:"~.{10,}"`
 }
 
 type LogSetup struct {
@@ -65,7 +65,7 @@ func main() {
 
 	// Run conftagz on the config struct
 	// to validate the config, sub any env vars, and put in defaults for missing items
-	_, err2 := conftagz.Process(nil, &config)
+	err2 := conftagz.Process(nil, &config)
 	if err2 != nil {
 		log.Fatalf("Config is bad: %v\n", err2)
 	} else {
@@ -74,5 +74,6 @@ func main() {
 
 	fmt.Printf("Config: %+v\n", config)
 	fmt.Printf("Logsetup: %+v\n", config.LogSetup)
+	fmt.Printf("SSL: %+v\n", config.SSL)
 
 }

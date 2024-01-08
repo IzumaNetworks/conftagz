@@ -18,7 +18,7 @@ type ConfTagOpts struct {
 	DefaultOpts *DefaultFieldSubstOpts
 }
 
-func Process(opts *ConfTagOpts, somestruct interface{}) (ret []string, err error) {
+func Process(opts *ConfTagOpts, somestruct interface{}) (err error) {
 	if opts == nil {
 		opts = &ConfTagOpts{}
 	}
@@ -32,7 +32,7 @@ func Process(opts *ConfTagOpts, somestruct interface{}) (ret []string, err error
 			if opts.EnvOpts == nil {
 				opts.EnvOpts = &EnvFieldSubstOpts{}
 			}
-			ret, err = EnvFieldSubstitution(somestruct, opts.EnvOpts)
+			_, err = EnvFieldSubstitution(somestruct, opts.EnvOpts)
 			if err != nil {
 				return
 			}
@@ -40,7 +40,7 @@ func Process(opts *ConfTagOpts, somestruct interface{}) (ret []string, err error
 			if opts.DefaultOpts == nil {
 				opts.DefaultOpts = &DefaultFieldSubstOpts{}
 			}
-			ret, err = SubsistuteDefaults(somestruct, opts.DefaultOpts)
+			_, err = SubsistuteDefaults(somestruct, opts.DefaultOpts)
 			if err != nil {
 				return
 			}
@@ -48,7 +48,7 @@ func Process(opts *ConfTagOpts, somestruct interface{}) (ret []string, err error
 			if opts.TestOpts == nil {
 				opts.TestOpts = &TestFieldSubstOpts{}
 			}
-			ret, err = RunTestFlags(somestruct, opts.TestOpts)
+			_, err = RunTestFlags(somestruct, opts.TestOpts)
 			if err != nil {
 				return
 			}

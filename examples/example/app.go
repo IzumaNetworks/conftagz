@@ -32,7 +32,7 @@ func main() {
 
 	// Run conftagz on the config struct
 	// to validate the config, sub any env vars, and put in defaults for missing items
-	_, err2 := conftagz.Process(nil, &config)
+	err2 := conftagz.Process(nil, &config)
 	if err2 != nil {
 		log.Fatalf("Config is bad: %v\n", err2)
 	} else {
