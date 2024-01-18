@@ -196,7 +196,7 @@ The `test:` tag allows one or more tests to be performed on a field. By default,
 
 ### Numeric fields
 
-For numeric fields, `test:` supports: `>VAL`,`<VAL`,`<=VAL`,`<=VAL`,`==VAL`. Tests can be combined, comma seperated which will casue logical `&&` behavior.
+For numeric fields, `test:` supports: `>VAL`,`<VAL`,`>=VAL`,`<=VAL`,`==VAL`. Tests can be combined, comma seperated which will casue logical `&&` behavior.
 
 For instance:
 
@@ -247,7 +247,7 @@ fieldstructfunc := func(val interface{}, fieldname string) bool {
         // should never happen
         return false
     }
-    if valstr.Stuff1 != "innerstuff" {
+    if valstr == nil || valstr.Stuff1 != "innerstuff" {
         return false
     }
     return true

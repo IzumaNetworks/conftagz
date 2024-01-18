@@ -439,7 +439,10 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 					}
 				}
 			} else {
-				return fmt.Errorf("default for %s cannot be set", field.Name)
+				if len(defaultval) > 0 {
+					return fmt.Errorf("default for %s cannot be set", field.Name)
+				}
+
 			}
 			// }
 

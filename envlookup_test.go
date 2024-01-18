@@ -8,10 +8,17 @@ import (
 )
 
 type MyStruct struct {
-	Field1 string `yaml:"important" env:"Important" default:"Apple"`
-	Field2 string `json:"field2" env:"VeryImportant" default:"Banana" test:"~R.*[Ss]{1}$"`
-	Field3 int    `env:"ExtremelyImportant" default:"999" test:">=1024"`
+	Field1       string `yaml:"important" env:"Important" default:"Apple"`
+	Field2       string `json:"field2" env:"VeryImportant" default:"Banana" test:"~R.*[Ss]{1}$"`
+	Field3       int    `env:"ExtremelyImportant" default:"999" test:">=1024"`
+	privateField int
 }
+
+type MyStructWithPrivateAndTag struct {
+	Field1       string `yaml:"important" env:"Important" default:"Apple"`
+	privateField int    `env:"WONTWORK" default:"123" test:">=1024"`
+}
+
 type MyStruct2 struct {
 	Path string `yaml:"path" env:"PATH"`
 }
@@ -79,7 +86,7 @@ type MyStructWithSliceOfPointersToStruct struct {
 }
 
 func TestEnvFieldSubstitutionFromMap(t *testing.T) {
-	mystruct := MyStruct{"Value1", "Value2", 3}
+	mystruct := MyStruct{"Value1", "Value2", 3, 0}
 
 	envMap := map[string]string{
 		"Important":          "NewValue1",
@@ -103,6 +110,22 @@ func TestEnvFieldSubstitutionFromMap(t *testing.T) {
 	assert.Equal(t, mystruct.Field3, 123)
 }
 
+func TestEnvFieldWithPrivateFieldTagShouldFail(t *testing.T) {
+	mystruct := MyStructWithPrivateAndTag{"Value1", 0}
+
+	envMap := map[string]string{
+		"Important": "NewValue1",
+		"WONTWORK":  "NewValue2",
+	}
+
+	result, err := EnvFieldSubstitutionFromMap(&mystruct, &EnvFieldSubstOpts{ThrowErrorIfEnvMissing: true}, envMap)
+	if err == nil {
+		t.Errorf("Expected error, but got %v", result)
+	} else {
+		assert.Equal(t, "env for privateField cannot be set", err.Error())
+	}
+}
+
 // assumea PATH is there
 func TestEnvFieldSubstitutionFromEnviron(t *testing.T) {
 	mystruct := MyStruct2{"Value1"}
@@ -120,7 +143,7 @@ func TestEnvFieldSubstitutionFromEnviron(t *testing.T) {
 }
 
 func TestEnvFieldSubstitutionFromMap3(t *testing.T) {
-	mystruct := MyStruct{"Value1", "Value2", 3}
+	mystruct := MyStruct{"Value1", "Value2", 3, 0}
 
 	envMap := map[string]string{
 		"Important":          "NewValue1",

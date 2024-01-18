@@ -234,7 +234,9 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 					}
 				}
 			} else {
-				return fmt.Errorf("default for %s cannot be set", field.Name)
+				if len(tag) > 0 {
+					return fmt.Errorf("env for %s cannot be set", field.Name)
+				}
 			}
 			// }
 

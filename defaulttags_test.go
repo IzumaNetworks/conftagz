@@ -8,7 +8,7 @@ import (
 )
 
 func TestDefaultFields(t *testing.T) {
-	mystruct := MyStruct{"Value1", "", 33}
+	mystruct := MyStruct{"Value1", "", 33, 0}
 
 	expected := []string{"Field2"}
 
@@ -24,6 +24,17 @@ func TestDefaultFields(t *testing.T) {
 	assert.Equal(t, "Value1", mystruct.Field1)
 	assert.Equal(t, "Banana", mystruct.Field2)
 	assert.Equal(t, mystruct.Field3, 33)
+}
+
+func TestDefaultFieldWithPrivateFieldTagShouldFail(t *testing.T) {
+	mystruct := MyStructWithPrivateAndTag{"Value1", 0}
+
+	result, err := SubsistuteDefaults(&mystruct, nil)
+	if err == nil {
+		t.Errorf("Expected error, but got %v", result)
+	} else {
+		assert.Equal(t, "default for privateField cannot be set", err.Error())
+	}
 }
 
 // assumea PATH is there
