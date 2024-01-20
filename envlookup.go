@@ -167,7 +167,10 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 			// Get the field value
 			fieldValue := inputValue.FieldByName(field.Name)
 			// Only do substitution if the field value can be changed
-
+			if !field.IsExported() {
+				debugf("env: Field %s is not exported\n", field.Name)
+				continue
+			}
 			if field.Type.Kind() == reflect.Ptr {
 				// recurse
 				fieldValue := inputValue.FieldByName(field.Name)
@@ -191,11 +194,15 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 						}
 					default:
 						debugf("env: Got a NON-fundamental type: %s %s which is a %s\n", t.Kind().String(), t.Elem().String(), t.Elem().Kind().String())
-						if t.Elem().Kind() == reflect.Struct {
-							fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+						if fieldValue.CanSet() {
+							if t.Elem().Kind() == reflect.Struct {
+								fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+							} else {
+								err = fmt.Errorf("default for %s underlying type unsupported", field.Name)
+								return
+							}
 						} else {
-							err = fmt.Errorf("default for %s underlying type unsupported", field.Name)
-							return
+							debugf("env: Field %s cannot be set (private ?)\n", field.Name)
 						}
 					}
 				}

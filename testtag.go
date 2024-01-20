@@ -438,6 +438,10 @@ func RunTestFlags(somestruct interface{}, opts *TestFieldSubstOpts) (ret []strin
 			if testSkip(confops) {
 				continue
 			}
+			if !field.IsExported() {
+				debugf("test: Field %s is not exported\n", field.Name)
+				continue
+			}
 
 			var op *testConfOp
 			// parse testval
@@ -484,7 +488,11 @@ func RunTestFlags(somestruct interface{}, opts *TestFieldSubstOpts) (ret []strin
 					case reflect.Struct:
 						debugf("test: Ptr: Underlying struct type: %s\n", t.Elem().Kind().String())
 						if field.Type.Kind() == reflect.Ptr { // i.e. not a slice
-							fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+							if fieldValue.CanSet() {
+								fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+							} else {
+								debugf("test: Field %s cannot be set (private ?)\n", field.Name)
+							}
 						}
 					// case reflect.Slice:
 					// 	debugf("Ptr: Underlying slice type: %s\n", t.Elem().Kind().String())

@@ -52,8 +52,15 @@ type MyStructWithStruct2 struct {
 	WeirdStuff interface{}
 	Weird2     *uintptr
 }
+
+type innerStruct struct {
+	nothing int
+}
+
 type InnerStruct struct {
-	FieldInner1 string `yaml:"important" env:"INNER1" default:"InnerApple" test:"~.{3,}"`
+	FieldInner1   string `yaml:"important" env:"INNER1" default:"InnerApple" test:"~.{3,}"`
+	privateField  *innerStruct
+	privateField2 innerStruct
 }
 type MyStruct3 struct {
 	Field1    string        `yaml:"important" env:"Important" default:"Apple"`
@@ -118,11 +125,14 @@ func TestEnvFieldWithPrivateFieldTagShouldFail(t *testing.T) {
 		"WONTWORK":  "NewValue2",
 	}
 
+	expected := []string{"Field1"}
+
 	result, err := EnvFieldSubstitutionFromMap(&mystruct, &EnvFieldSubstOpts{ThrowErrorIfEnvMissing: true}, envMap)
-	if err == nil {
-		t.Errorf("Expected error, but got %v", result)
-	} else {
-		assert.Equal(t, "env for privateField cannot be set", err.Error())
+	if err != nil {
+		t.Errorf("Error %v", result)
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, but got %v", expected, result)
 	}
 }
 
@@ -168,7 +178,7 @@ func TestEnvFieldSubstitutionFromMap3(t *testing.T) {
 	// assert.Equal(t, 123, mystruct.Field3)
 }
 func TestEnvFieldSubstitutionStructWithStruct(t *testing.T) {
-	mystruct := MyStructWithStruct{"Value1", "Value2", 3, "", nil, nil, nil, InnerStruct{"InnerValue1"}}
+	mystruct := MyStructWithStruct{"Value1", "Value2", 3, "", nil, nil, nil, InnerStruct{"InnerValue1", nil, innerStruct{0}}}
 
 	envMap := map[string]string{
 		"ENV1":   "NewValue1",

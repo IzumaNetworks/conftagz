@@ -25,10 +25,8 @@ func TestTestFieldWithPrivateFieldTagShouldFail(t *testing.T) {
 	mystruct := MyStructWithPrivateAndTag{"Value1", 0}
 
 	result, err := RunTestFlags(&mystruct, nil)
-	if err == nil {
-		t.Errorf("Expected error, but got %v", result)
-	} else {
-		assert.Equal(t, "test for privateField cannot be run", err.Error())
+	if err != nil {
+		t.Errorf("Expected no err got %v", result)
 	}
 }
 func TestTestFieldsPass(t *testing.T) {
@@ -52,7 +50,7 @@ func TestTestFieldsPass(t *testing.T) {
 
 func TestTestFieldsWithStruct(t *testing.T) {
 	str := "Elastic"
-	mystruct := MyStructWithStruct{"Appppple", "Bolivia", 1, "?", &str, nil, &InnerStruct{"123"}, InnerStruct{"LALA"}}
+	mystruct := MyStructWithStruct{"Appppple", "Bolivia", 1, "?", &str, nil, &InnerStruct{"123", nil, innerStruct{0}}, InnerStruct{"LALA", nil, innerStruct{0}}}
 
 	expected := []string{"Field1", "Field2", "Field3", "Field5", "InnerPtr.FieldInner1", "Inner.FieldInner1"}
 
@@ -77,7 +75,7 @@ func TestTestFieldsWithStruct(t *testing.T) {
 
 func TestTestFieldsWithStruct2(t *testing.T) {
 	str := "Elastic"
-	mystruct := MyStructWithStruct2{"Appppple", "Bolivia", 1, "?", &str, nil, 0, nil, InnerStruct{"LALA"}, nil, nil, nil}
+	mystruct := MyStructWithStruct2{"Appppple", "Bolivia", 1, "?", &str, nil, 0, nil, InnerStruct{"LALA", nil, innerStruct{0}}, nil, nil, nil}
 
 	expected := []string{"Field1", "Field2", "Field3", "Field5", "Inner.FieldInner1"}
 
@@ -168,11 +166,11 @@ func TestTestCustomFunc(t *testing.T) {
 
 // and now for the fun stuff
 func TestTestSliceOfPointersToStruct(t *testing.T) {
-	mystruct := MyStructWithSliceOfPointersToStruct{"APPPPLE", nil, nil, []int{1, 2, 3}, &InnerStruct{"inner1"}}
+	mystruct := MyStructWithSliceOfPointersToStruct{"APPPPLE", nil, nil, []int{1, 2, 3}, &InnerStruct{"inner1", nil, innerStruct{0}}}
 
-	inner1 := InnerStruct{"inner1"}
-	inner2 := InnerStruct{"inner2"}
-	inner1_2 := InnerStruct{"inner1_2"}
+	inner1 := InnerStruct{"inner1", nil, innerStruct{0}}
+	inner2 := InnerStruct{"inner2", nil, innerStruct{0}}
+	inner1_2 := InnerStruct{"inner1_2", nil, innerStruct{0}}
 
 	slice := []*InnerStruct{&inner1, &inner2}
 	mystruct.SliceField = slice

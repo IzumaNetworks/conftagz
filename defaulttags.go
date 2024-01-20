@@ -263,7 +263,10 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 				err = fmt.Errorf("conf:skipzero not supported with default tag: %s", field.Name)
 				return
 			}
-
+			if !field.IsExported() {
+				debugf("default: Field %s is not exported\n", field.Name)
+				continue
+			}
 			debugf("default: Field Name: %s, Default val: %s\n", field.Name, defaultval)
 			// if len(defaultval) > 0 {
 			// Get the field value
@@ -344,7 +347,11 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 							// no function? ok - then if its a Ptr to a struct, we create it
 							// otherwise we ignore it
 							if field.Type.Kind() == reflect.Ptr {
-								fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+								if fieldValue.CanSet() {
+									fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+								} else {
+									debugf("default: Field %s cannot be set (private ?)\n", field.Name)
+								}
 							}
 						}
 					case reflect.Slice:
