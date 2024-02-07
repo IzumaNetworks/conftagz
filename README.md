@@ -17,6 +17,12 @@ import (
 type Config struct {
 	WebhookURL string `yaml:"webhook_url" env:"APP_HOOK_URL" test:"~https://.*"`
 	Port       int    `yaml:"port" env:"APP_PORT" default:"8888" test:">=1024,<65537"`
+    Expiration string `yaml:"port" env:"APP_PORT" default:"1hr" test:"$(validtimeduration)"`
+}
+
+func ValidTimeDuration(val interface{}, fieldname string) bool {
+	_, err := time.ParseDuration(val.(string))
+	return err == nil
 }
 
 func main() {
@@ -35,6 +41,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
+    // register that custom test
+    conftagz.RegisterTestFunc("validtimeduration", ValidTimeDuration)
 
     // Run conftagz on the config struct
     // to validate the config, sub any env vars, 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/IzumaNetworks/conftagz"
 	"gopkg.in/yaml.v2"
@@ -12,9 +13,16 @@ import (
 type Config struct {
 	WebhookURL string `yaml:"webhook_url" env:"APP_HOOK_URL" test:"~https://.*"`
 	Port       int    `yaml:"port" env:"APP_PORT" default:"8888" test:">=1024,<65537"`
+	Expiration string `yaml:"expiration" default:"1h" test:"$(validtimeduration)"`
+}
+
+func ValidTimeDuration(val interface{}, fieldname string) bool {
+	_, err := time.ParseDuration(val.(string))
+	return err == nil
 }
 
 func main() {
+
 	var config Config
 
 	// load config file from yaml using yaml parser
@@ -29,16 +37,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
+	// register that custom test
+	conftagz.RegisterTestFunc("validtimeduration", ValidTimeDuration)
 
 	// Run conftagz on the config struct
-	// to validate the config, sub any env vars, and put in defaults for missing items
+	// to validate the config, sub any env vars,
+	// and put in defaults for missing items
 	err2 := conftagz.Process(nil, &config)
 	if err2 != nil {
+		// some test tag failed
 		log.Fatalf("Config is bad: %v\n", err2)
 	} else {
 		fmt.Printf("Config good.\n")
 	}
 
-	fmt.Printf("Config: %+v\n", config)
+	fmt.Printf("Config: %v\n", config)
 
 }
