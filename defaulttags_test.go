@@ -8,7 +8,7 @@ import (
 )
 
 func TestDefaultFields(t *testing.T) {
-	mystruct := MyStruct{"Value1", "", 33, 0}
+	mystruct := MyStruct{"Value1", "", 33, 0, false}
 
 	expected := []string{"Field2"}
 
@@ -140,7 +140,7 @@ func TestDefaultFieldsWithStructStringExists(t *testing.T) {
 }
 
 func TestDefaultFieldWithStruct3(t *testing.T) {
-	mystruct := MyStruct3{"Value1", "", 3, nil, nil}
+	mystruct := MyStruct3{"Value1", "", 3, nil, nil, nil}
 
 	expected := []string{"Field2", "Inner2Ptr.Stuff1"}
 
@@ -162,7 +162,7 @@ func TestDefaultFieldWithStruct3(t *testing.T) {
 }
 
 func TestDefaultFieldsWithStruct3NonNilStructs(t *testing.T) {
-	mystruct := MyStruct3{"", "", 0, &InnerStruct2{}, &InnerStruct2{}}
+	mystruct := MyStruct3{"", "", 0, &InnerStruct2{}, &InnerStruct2{}, nil}
 
 	expected := []string{"Field1", "Field2", "Field3", "Inner2Ptr.Stuff1"}
 

@@ -17,8 +17,9 @@ import (
 
 type Config struct {
 	WebhookURL string `yaml:"webhook_url" env:"APP_HOOK_URL" test:"~https://.*"`
-	Port       int    `yaml:"port" env:"APP_PORT" default:"8888" test:">=1024,<65537"`
+	Port       int    `yaml:"port" env:"APP_PORT" default:"8888" flag:"port" test:">=1024,<65537"`
 	Expiration string `yaml:"expiration" default:"1h" test:"$(validtimeduration)"`
+	DebugMode  bool   `yaml:"debug_mode" env:"DEBUG" flag:"debug"`
 }
 
 func ValidTimeDuration(val interface{}, fieldname string) bool {
@@ -62,6 +63,36 @@ func main() {
 
 ```
 
+Given a config file of:
+
+```yaml
+webhook_url: https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX
+port: 8080
+```
+
+Will yield:
+```
+% ./example
+Config good.
+Config: {https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX 8080 1h false}
+% ./example -debug
+Config good.
+Config: {https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX 8080 1h true}
+% ./example -debug -port 8181
+Config good.
+Config: {https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX 8181 1h true}
+% DEBUG=1 ./example
+Config good.
+Config: {https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX 8080 1h true}
+% APP_PORT=8989 DEBUG=1 ./example
+Config good.
+Config: {https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX 8989 1h false}
+% APP_PORT=89 ./example
+2024/02/13 11:04:55 Config is bad: field Port: value 89 ! >= 1024
+%  DEBUG=1 ./example --port 33
+2024/02/13 11:05:07 Config is bad: field Port: value 33 ! >= 1024
+```
+
 
 ## What this is
 
@@ -78,6 +109,8 @@ The order of operation and priority of these steps might differ here and there. 
 ## The tags of `conftagz`
 
 `conftagz` attempts to eleminate code writing for as much of this as possible by offering:
+
+A `flag:` and (optional) `usage:` tag. This allows setting specific struct fields to be set by a command line flag. Uses the standrd `flag` package.
 
 A `env:` struct tag which will replace the value of the field with the contents of the env var if present.
 
@@ -99,6 +132,7 @@ Obviously, `conftagz` makes uses of the `reflect` package to do all this.
 
 Fundamental types:
 - `int`, `int16`, `int32`, `int64` and unsigned varaints
+- `bool` (not supported by `default:` tag as unnecessary)
 - `float32` and `float64`
 - `string` ... `conftagz` uses the golang regex std library for regex tests
 - pointers to all the above - `conftagz` will create the item if the pointer is nil _and_ a default or env var apply

@@ -43,7 +43,14 @@ func StringToInt64(s string) (int64, error) {
 	}
 	return i, nil
 }
-
+func StringToUint64(s string) (uint64, error) {
+	i, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		fmt.Println(err)
+		return 0, err
+	}
+	return i, nil
+}
 func StringToFloat64(s string) (float64, error) {
 	i, err := strconv.ParseFloat(s, 64)
 	if err != nil {
@@ -76,6 +83,12 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 				// Change the value of the field to the tag value
 				fieldValue.SetString(val)
 				ret = append(ret, addParentPath(parentpath, fieldName))
+			case reflect.Bool:
+				// if env var is anything other than empty or "0" or "false"
+				// then make true
+				if len(val) > 0 && val != "0" && val != "false" {
+					fieldValue.SetBool(true)
+				}
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				// Change the value of the field to the tag value
 				// first convert string to int
@@ -86,8 +99,18 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 
 				fieldValue.SetInt(nval)
 				ret = append(ret, addParentPath(parentpath, fieldName))
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				// Change the value of the field to the tag value
+				// first convert string to int
+				nval, err := StringToUint64(val)
+				if err != nil {
+					return fmt.Errorf("map (env) %s value %s not a number", tag, val)
+				}
+
+				fieldValue.SetUint(nval)
+				ret = append(ret, addParentPath(parentpath, fieldName))
 			default:
-				return fmt.Errorf("map (env) for %s underlying type unsupported (setDefault)", fieldValue.Type().String())
+				return fmt.Errorf("map (env) for %s underlying type unsupported (setEnvVal)", fieldValue.Type().String())
 			}
 		} else {
 			if throwErrorIfEnvMissing {
@@ -106,6 +129,12 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 				// Change the value of the field to the tag value
 				fieldValue.Elem().SetString(val)
 				ret = append(ret, addParentPath(parentpath, fieldName))
+			case reflect.Bool:
+				// if env var is anything other than empty or "0" or "false"
+				// then make true
+				if len(val) > 0 && val != "0" && val != "false" {
+					fieldValue.Elem().SetBool(true)
+				}
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				// Change the value of the field to the tag value
 				// first convert string to int
@@ -116,8 +145,18 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 
 				fieldValue.Elem().SetInt(nval)
 				ret = append(ret, addParentPath(parentpath, fieldName))
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				// Change the value of the field to the tag value
+				// first convert string to int
+				nval, err := StringToUint64(val)
+				if err != nil {
+					return fmt.Errorf("map (env) %s value %s not a number", tag, val)
+				}
+
+				fieldValue.Elem().SetUint(nval)
+				ret = append(ret, addParentPath(parentpath, fieldName))
 			default:
-				return fmt.Errorf("map (env) val for %s underlying type unsupported (setDefault)", fieldValue.Type().String())
+				return fmt.Errorf("map (env) val for %s underlying type unsupported (setEnvValPtr)", fieldValue.Type().String())
 			}
 			return nil
 		} else {
@@ -186,7 +225,7 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 						continue
 					}
 					switch t.Elem().Kind() {
-					case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+					case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint16, reflect.Uint8, reflect.Uint32, reflect.Uint64, reflect.Bool:
 						debugf("env: Ptr: Underlying fundamental type: %s\n", t.Elem().Kind().String())
 						// Does an env refenced exist?
 						if _, ok := m[tag]; ok {

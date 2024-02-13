@@ -9,13 +9,13 @@ import (
 
 // see envlookup_test.go for the struct definitions
 func TestTestFieldsFail(t *testing.T) {
-	mystruct := MyStruct{"Value1", "Real Tomatoes", 33, 0}
+	mystruct := MyStruct{"Value1", "Real Tomatoes", 33, 0, false}
 
 	_, err := RunTestFlags(&mystruct, nil)
 	assert.EqualError(t, err, "field Field3: value 33 ! >= 1024")
 }
 func TestTestFieldsFail2(t *testing.T) {
-	mystruct := MyStruct{"Value1", "meh", 1025, 0}
+	mystruct := MyStruct{"Value1", "meh", 1025, 0, false}
 
 	_, err := RunTestFlags(&mystruct, nil)
 	assert.EqualError(t, err, "field Field2: value \"meh\" !~ regexp R.*[Ss]{1}$")
@@ -30,7 +30,7 @@ func TestTestFieldWithPrivateFieldTagShouldFail(t *testing.T) {
 	}
 }
 func TestTestFieldsPass(t *testing.T) {
-	mystruct := MyStruct{"Value1", "Real Tomatoes", 1025, 0}
+	mystruct := MyStruct{"Value1", "Real Tomatoes", 1025, 0, false}
 
 	expected := []string{"Field2", "Field3"}
 

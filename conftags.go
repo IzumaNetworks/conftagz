@@ -2,14 +2,17 @@ package conftagz
 
 const (
 	_ int = iota
+	FLAGTAGS
 	ENVTAGS
 	DEFAULTTAGS
 	TESTTAGS
 )
 
 func defaultOrderOfOps() []int {
-	return []int{ENVTAGS, DEFAULTTAGS, TESTTAGS}
+	return []int{FLAGTAGS, ENVTAGS, DEFAULTTAGS, TESTTAGS}
 }
+
+const CONFFIELD = "conf"
 
 type ConfTagOpts struct {
 	OrderOfOps  []int
@@ -28,6 +31,11 @@ func Process(opts *ConfTagOpts, somestruct interface{}) (err error) {
 
 	for _, op := range opts.OrderOfOps {
 		switch op {
+		case FLAGTAGS:
+			err = ProcessFlags(somestruct, nil)
+			if err != nil {
+				return
+			}
 		case ENVTAGS:
 			if opts.EnvOpts == nil {
 				opts.EnvOpts = &EnvFieldSubstOpts{}
