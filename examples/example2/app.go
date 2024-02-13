@@ -28,7 +28,7 @@ type LogSetup struct {
 }
 
 type Config struct {
-	WebhookURL string    `yaml:"webhook_url" env:"APP_HOOK_URL" test:"~https://.*"`
+	WebhookURL string    `yaml:"webhook_url" env:"APP_HOOK_URL" test:"~https://.*" flag:"webhookurl" usage:"URL to send webhooks to"`
 	Port       int       `yaml:"port" env:"APP_PORT" default:"8888" test:">=1024,<65537"`
 	SSL        *SSLStuff `yaml:"sslstuff"`
 	Servers    []*Server `yaml:"servers"`

@@ -83,6 +83,7 @@ type flagSetRetriever struct {
 	fieldValue reflect.Value
 	retrievers []flagRetrieverFunc
 	val        interface{}
+	touched    bool
 }
 
 var needflags map[string]*flagSetRetriever
@@ -113,9 +114,11 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 		// TODO - add support for Ptr to String and Ints
 		case reflect.Bool:
 			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
-				s, ok := r.val.(*bool)
-				if ok {
-					fieldValue.SetBool(*s)
+				if r.touched {
+					s, ok := r.val.(*bool)
+					if ok {
+						fieldValue.SetBool(*s)
+					}
 				}
 				// else {
 				// 	return fmt.Errorf("flag %s underlying interface{} type coercion failed", tag)
@@ -132,6 +135,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 				myflags.BoolFunc(tag, usagetag, func(s string) error {
 					v := new(bool)
 					retriever.val = v
+					retriever.touched = true
 					b, err := strconv.ParseBool(s)
 					if err != nil {
 						return err
@@ -146,12 +150,14 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 		case reflect.String:
 			// Change the value of the field to the tag value
 			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
-				if r.val != nil {
-					s, ok := r.val.(*string)
-					if ok {
-						fieldValue.SetString(*s)
-					} else {
-						return fmt.Errorf("flag %s underlying interface{} type coercion failed", tag)
+				if r.touched {
+					if r.val != nil {
+						s, ok := r.val.(*string)
+						if ok {
+							fieldValue.SetString(*s)
+						} else {
+							return fmt.Errorf("flag %s underlying interface{} type coercion failed", tag)
+						}
 					}
 				}
 				return nil
@@ -164,6 +170,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 
 				myflags.Func(tag, usagetag, func(s string) error {
 					v := new(string)
+					retriever.touched = true
 					retriever.val = v
 					*v = s
 					return nil
@@ -175,12 +182,14 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 			ret = append(ret, addParentPath(parentpath, fieldName))
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
-				if r.val != nil {
-					s, ok := r.val.(*int64)
-					if ok {
-						fieldValue.SetInt(*s)
-					} else {
-						return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+				if r.touched {
+					if r.val != nil {
+						s, ok := r.val.(*int64)
+						if ok {
+							fieldValue.SetInt(*s)
+						} else {
+							return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+						}
 					}
 				}
 				return nil
@@ -193,6 +202,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 
 				myflags.Func(tag, usagetag, func(s string) error {
 					v := new(int64)
+					retriever.touched = true
 					retriever.val = v
 					i, err := strconv.ParseInt(s, 10, 64)
 					if err != nil {
@@ -207,12 +217,14 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 		case reflect.Uint, reflect.Uint16, reflect.Uint8, reflect.Uint32, reflect.Uint64:
 
 			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
-				if r.val != nil {
-					s, ok := r.val.(*uint64)
-					if ok {
-						fieldValue.SetUint(*s)
-					} else {
-						return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+				if r.touched {
+					if r.val != nil {
+						s, ok := r.val.(*uint64)
+						if ok {
+							fieldValue.SetUint(*s)
+						} else {
+							return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+						}
 					}
 				}
 				return nil
@@ -226,6 +238,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 				myflags.Func(tag, usagetag, func(s string) error {
 					v := new(uint64)
 					retriever.val = v
+					retriever.touched = true
 					i, err := strconv.ParseUint(s, 10, 64)
 					if err != nil {
 						return err
@@ -248,9 +261,11 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 		// TODO - add support for Ptr to String and Ints
 		case reflect.Bool:
 			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
-				s, ok := r.val.(*bool)
-				if ok {
-					fieldValue.Elem().SetBool(*s)
+				if r.touched {
+					s, ok := r.val.(*bool)
+					if ok {
+						fieldValue.Elem().SetBool(*s)
+					}
 				}
 				// else {
 				// 	return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
@@ -267,6 +282,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 				myflags.BoolFunc(tag, usagetag, func(s string) error {
 					v := new(bool)
 					retriever.val = v
+					retriever.touched = true
 					b, err := strconv.ParseBool(s)
 					if err != nil {
 						return err
@@ -279,12 +295,14 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 			}
 		case reflect.String:
 			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
-				if r.val != nil {
-					s, ok := r.val.(*string)
-					if ok {
-						fieldValue.Elem().SetString(*s)
-					} else {
-						return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+				if r.touched {
+					if r.val != nil {
+						s, ok := r.val.(*string)
+						if ok {
+							fieldValue.Elem().SetString(*s)
+						} else {
+							return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+						}
 					}
 				}
 				return nil
@@ -298,6 +316,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 				myflags.Func(tag, usagetag, func(s string) error {
 					v := new(string)
 					retriever.val = v
+					retriever.touched = true
 					*v = s
 					return nil
 				})
@@ -307,12 +326,14 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 			ret = append(ret, addParentPath(parentpath, fieldName))
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
-				if r.val != nil {
-					s, ok := r.val.(*int64)
-					if ok {
-						fieldValue.Elem().SetInt(*s)
-					} else {
-						return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+				if r.touched {
+					if r.val != nil {
+						s, ok := r.val.(*int64)
+						if ok {
+							fieldValue.Elem().SetInt(*s)
+						} else {
+							return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+						}
 					}
 				}
 				return nil
@@ -326,6 +347,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 				myflags.Func(tag, usagetag, func(s string) error {
 					v := new(int64)
 					retriever.val = v
+					retriever.touched = true
 					i, err := strconv.ParseInt(s, 10, 64)
 					if err != nil {
 						return err
@@ -340,12 +362,14 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 		case reflect.Uint, reflect.Uint16, reflect.Uint8, reflect.Uint32, reflect.Uint64:
 			// Change the value of the field to the tag value
 			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
-				if r.val != nil {
-					s, ok := r.val.(*uint64)
-					if ok {
-						fieldValue.Elem().SetUint(*s)
-					} else {
-						return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+				if r.touched {
+					if r.val != nil {
+						s, ok := r.val.(*uint64)
+						if ok {
+							fieldValue.Elem().SetUint(*s)
+						} else {
+							return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+						}
 					}
 				}
 				return nil
@@ -359,6 +383,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 				myflags.Func(tag, usagetag, func(s string) error {
 					v := new(uint64)
 					retriever.val = v
+					retriever.touched = true
 					i, err := strconv.ParseUint(s, 10, 64)
 					if err != nil {
 						return err

@@ -32,6 +32,30 @@ func TestFlagFields(t *testing.T) {
 	assert.Equal(t, true, mystruct.Field4)
 }
 
+func TestFlagFieldsNoFlagProvided(t *testing.T) {
+	mystruct := MyStruct{"Value1", "", 33, 0, false}
+
+	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
+	argz := []string{"-important", "Banana", "-extremelyimportant", "88", "-field4"}
+
+	// expected := []string{"Field2"}
+
+	err := ProcessFlagsWithFlagSet(&mystruct, flagset, argz)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+		return
+	}
+
+	// if !reflect.DeepEqual(result, expected) {
+	// 	t.Errorf("Expected %v, but got %v", expected, result)
+	// }
+
+	assert.Equal(t, "Banana", mystruct.Field1)
+	assert.Equal(t, "", mystruct.Field2)
+	assert.Equal(t, mystruct.Field3, 88)
+	assert.Equal(t, true, mystruct.Field4)
+}
+
 func TestFlagFieldWithPrivateFieldTagShouldFail(t *testing.T) {
 
 	mystruct := MyStructWithPrivateAndTag{"Value1", 0}
