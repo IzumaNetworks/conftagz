@@ -19,6 +19,7 @@ type ConfTagOpts struct {
 	EnvOpts     *EnvFieldSubstOpts
 	TestOpts    *TestFieldSubstOpts
 	DefaultOpts *DefaultFieldSubstOpts
+	FlagTagOpts *FlagFieldSubstOpts
 }
 
 func Process(opts *ConfTagOpts, somestruct interface{}) (err error) {
@@ -32,11 +33,16 @@ func Process(opts *ConfTagOpts, somestruct interface{}) (err error) {
 	for _, op := range opts.OrderOfOps {
 		switch op {
 		case FLAGTAGS:
-			err = ProcessFlags(somestruct, nil)
+			debugf("Processing flag: tags\n")
+			if opts.FlagTagOpts == nil {
+				opts.FlagTagOpts = &FlagFieldSubstOpts{}
+			}
+			err = ProcessFlags(somestruct, opts.FlagTagOpts)
 			if err != nil {
 				return
 			}
 		case ENVTAGS:
+			debugf("Processing env: tags\n")
 			if opts.EnvOpts == nil {
 				opts.EnvOpts = &EnvFieldSubstOpts{}
 			}
@@ -45,6 +51,7 @@ func Process(opts *ConfTagOpts, somestruct interface{}) (err error) {
 				return
 			}
 		case DEFAULTTAGS:
+			debugf("Processing default: tags\n")
 			if opts.DefaultOpts == nil {
 				opts.DefaultOpts = &DefaultFieldSubstOpts{}
 			}
@@ -53,6 +60,7 @@ func Process(opts *ConfTagOpts, somestruct interface{}) (err error) {
 				return
 			}
 		case TESTTAGS:
+			debugf("Processing test: tags\n")
 			if opts.TestOpts == nil {
 				opts.TestOpts = &TestFieldSubstOpts{}
 			}

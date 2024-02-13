@@ -8,13 +8,6 @@ import (
 	"strconv"
 )
 
-type FlagFieldSubstOpts struct {
-	// throws an error if the environment variable is not found
-	//	ThrowErrorIfEnvMissing bool
-	useflags *flag.FlagSet
-	args     []string
-}
-
 const FLAGFIELD = "flag"
 const FLAGFIELDUSAGE = "usage"
 
@@ -86,23 +79,42 @@ type flagSetRetriever struct {
 	touched    bool
 }
 
-var needflags map[string]*flagSetRetriever
+type ProcessedFlagTags struct {
+	needflags map[string]*flagSetRetriever
+	// true if we have ran ProcessAllFlagTags
+	flagsProcessed bool
+	fieldsTouched  []string
+}
 
-// true if we have ran ProcessAllFlagTags
-var flagsProcessed bool
+type FlagFieldSubstOpts struct {
+	// throws an error if the environment variable is not found
+	//	ThrowErrorIfEnvMissing bool
+	UseFlags *flag.FlagSet
+	Args     []string
+	Tags     *ProcessedFlagTags
+}
 
 // EnvFieldSubstitutionFromMap is a function that takes a pointer to a struct
-func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret []string, err error) {
-	if flagsProcessed {
-		return nil, nil
+func ProcessFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret *ProcessedFlagTags, err error) {
+	ret = &ProcessedFlagTags{}
+	if opts == nil {
+		opts = &FlagFieldSubstOpts{}
+
 	}
+	if opts.Tags == nil {
+		opts.Tags = ret
+	}
+	if opts.Tags.flagsProcessed {
+		return opts.Tags, nil
+	}
+	ret.flagsProcessed = true
 	// this will record all the flags we need to set
-	needflags = make(map[string]*flagSetRetriever)
+	ret.needflags = make(map[string]*flagSetRetriever)
 
 	if opts == nil {
 		opts = &FlagFieldSubstOpts{}
 	}
-	myflags := opts.useflags
+	myflags := opts.UseFlags
 
 	if myflags == nil {
 		myflags = flag.CommandLine
@@ -169,6 +181,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 				retriever.retrievers = append(retriever.retrievers, retrieverfunc)
 
 				myflags.Func(tag, usagetag, func(s string) error {
+					ret.fieldsTouched = append(ret.fieldsTouched, addParentPath(parentpath, fieldName))
 					v := new(string)
 					retriever.touched = true
 					retriever.val = v
@@ -179,7 +192,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 			}
 
 			// fieldValue.SetString(val)
-			ret = append(ret, addParentPath(parentpath, fieldName))
+
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
 				if r.touched {
@@ -202,6 +215,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 
 				myflags.Func(tag, usagetag, func(s string) error {
 					v := new(int64)
+					ret.fieldsTouched = append(ret.fieldsTouched, addParentPath(parentpath, fieldName))
 					retriever.touched = true
 					retriever.val = v
 					i, err := strconv.ParseInt(s, 10, 64)
@@ -213,7 +227,6 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 				})
 
 			}
-			ret = append(ret, addParentPath(parentpath, fieldName))
 		case reflect.Uint, reflect.Uint16, reflect.Uint8, reflect.Uint32, reflect.Uint64:
 
 			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
@@ -239,6 +252,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 					v := new(uint64)
 					retriever.val = v
 					retriever.touched = true
+					ret.fieldsTouched = append(ret.fieldsTouched, addParentPath(parentpath, fieldName))
 					i, err := strconv.ParseUint(s, 10, 64)
 					if err != nil {
 						return err
@@ -247,8 +261,6 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 					return nil
 				})
 			}
-
-			ret = append(ret, addParentPath(parentpath, fieldName))
 		default:
 			return nil, fmt.Errorf("(flag) %s underlying type unsupported (setFlagVal)", fieldValue.Type().String())
 		}
@@ -283,6 +295,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 					v := new(bool)
 					retriever.val = v
 					retriever.touched = true
+					ret.fieldsTouched = append(ret.fieldsTouched, addParentPath(parentpath, fieldName))
 					b, err := strconv.ParseBool(s)
 					if err != nil {
 						return err
@@ -316,14 +329,13 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 				myflags.Func(tag, usagetag, func(s string) error {
 					v := new(string)
 					retriever.val = v
+					ret.fieldsTouched = append(ret.fieldsTouched, addParentPath(parentpath, fieldName))
 					retriever.touched = true
 					*v = s
 					return nil
 				})
 
 			}
-
-			ret = append(ret, addParentPath(parentpath, fieldName))
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
 				if r.touched {
@@ -348,6 +360,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 					v := new(int64)
 					retriever.val = v
 					retriever.touched = true
+					ret.fieldsTouched = append(ret.fieldsTouched, addParentPath(parentpath, fieldName))
 					i, err := strconv.ParseInt(s, 10, 64)
 					if err != nil {
 						return err
@@ -356,9 +369,6 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 					return nil
 				})
 			}
-
-			ret = append(ret, addParentPath(parentpath, fieldName))
-
 		case reflect.Uint, reflect.Uint16, reflect.Uint8, reflect.Uint32, reflect.Uint64:
 			// Change the value of the field to the tag value
 			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
@@ -384,6 +394,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 					v := new(uint64)
 					retriever.val = v
 					retriever.touched = true
+					ret.fieldsTouched = append(ret.fieldsTouched, addParentPath(parentpath, fieldName))
 					i, err := strconv.ParseUint(s, 10, 64)
 					if err != nil {
 						return err
@@ -392,8 +403,6 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 					return nil
 				})
 			}
-
-			ret = append(ret, addParentPath(parentpath, fieldName))
 		default:
 			return nil, fmt.Errorf("map (env) val for %s underlying type unsupported (setFlagValPtr)", fieldValue.Type().String())
 		}
@@ -612,7 +621,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 					} else {
 						// nope then its just a fundamental type
 						if len(tag) > 0 {
-							existing, ok := needflags[tag] // check if we already have a retriever for this flag
+							existing, ok := ret.needflags[tag] // check if we already have a retriever for this flag
 							if ok {
 								setflagValPtr(parentpath, field.Name, fieldValue, tag, usagetag, existing)
 								if err != nil {
@@ -624,7 +633,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 								if err != nil {
 									return
 								}
-								needflags[tag] = retriever
+								ret.needflags[tag] = retriever
 							}
 						}
 
@@ -640,7 +649,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 				}
 			} else if fieldValue.CanSet() {
 				if len(tag) > 0 {
-					existing, ok := needflags[tag] // check if we already have a retriever for this flag
+					existing, ok := ret.needflags[tag] // check if we already have a retriever for this flag
 					if ok {
 						setFlagVal(parentpath, field.Name, fieldValue, tag, usagetag, existing)
 						if err != nil {
@@ -652,7 +661,7 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 						if err != nil {
 							return
 						}
-						needflags[tag] = retriever
+						ret.needflags[tag] = retriever
 					}
 				}
 			} else {
@@ -678,9 +687,13 @@ func ProcessAllFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret [
 
 // RunFlagFlags is a function that takes a pointer to a struct
 
-func FinalizeFlags() (err error) {
+func FinalizeFlags(tags *ProcessedFlagTags) (err error) {
+	if tags == nil {
+		err = fmt.Errorf("tags is nil")
+		return
+	}
 	//	flag.Parse()
-	for k, v := range needflags {
+	for k, v := range tags.needflags {
 		// retreve sets the value of fieldValue associate with the field after a Parse
 		err = v.retrieve(k)
 		if err != nil {
@@ -693,20 +706,25 @@ func FinalizeFlags() (err error) {
 // This is a convenience function that run the FlagFieldSubstitution and then calls flag.Parse()
 // and then calls FinalizeFlags
 func ProcessFlags(somestruct interface{}, opts *FlagFieldSubstOpts) (err error) {
-	_, err = ProcessAllFlagTags(somestruct, opts)
+	var processed *ProcessedFlagTags
+	processed, err = ProcessFlagTags(somestruct, opts)
 	if err != nil {
 		return
 	}
-	if opts == nil || opts.useflags == nil {
-		flag.Parse()
-	} else {
-		argz := opts.args
-		if argz == nil || len(argz) < 1 {
-			argz = os.Args[1:]
+	if opts == nil || opts.UseFlags == nil {
+		if !flag.Parsed() {
+			flag.Parse()
 		}
-		opts.useflags.Parse(argz)
+	} else {
+		if !opts.UseFlags.Parsed() {
+			argz := opts.Args
+			if argz == nil || len(argz) < 1 {
+				argz = os.Args[1:]
+			}
+			opts.UseFlags.Parse(argz)
+		}
 	}
-	err = FinalizeFlags()
+	err = FinalizeFlags(processed)
 	return
 }
 
@@ -714,13 +732,14 @@ func ProcessFlags(somestruct interface{}, opts *FlagFieldSubstOpts) (err error) 
 // and then calls FinalizeFlags - but with a flag.FlagSet passed in
 func ProcessFlagsWithFlagSet(somestruct interface{}, set *flag.FlagSet, argz []string) (err error) {
 	//	flagset := flag.NewFlagSet("test", flag.ExitOnError)
-	_, err = ProcessAllFlagTags(somestruct, &FlagFieldSubstOpts{
-		useflags: set,
+	var processed *ProcessedFlagTags
+	processed, err = ProcessFlagTags(somestruct, &FlagFieldSubstOpts{
+		UseFlags: set,
 	})
 	if err != nil {
 		return
 	}
 	set.Parse(argz)
-	err = FinalizeFlags()
+	err = FinalizeFlags(processed)
 	return
 }
