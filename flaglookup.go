@@ -86,6 +86,18 @@ type ProcessedFlagTags struct {
 	fieldsTouched  []string
 }
 
+func (p *ProcessedFlagTags) GetFlagsFound() (ret []string) {
+	ret = make([]string, 0)
+	for k, _ := range p.needflags {
+		ret = append(ret, k)
+	}
+	return
+}
+
+func (p *ProcessedFlagTags) GetFieldsTouched() (ret []string) {
+	return p.fieldsTouched
+}
+
 type FlagFieldSubstOpts struct {
 	// throws an error if the environment variable is not found
 	//	ThrowErrorIfEnvMissing bool

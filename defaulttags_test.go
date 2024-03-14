@@ -8,7 +8,7 @@ import (
 )
 
 func TestDefaultFields(t *testing.T) {
-	mystruct := MyStruct{"Value1", "", 33, 0, false}
+	mystruct := MyStruct{"Value1", "", 33, 33, 33, 0, false}
 
 	expected := []string{"Field2"}
 
@@ -50,7 +50,7 @@ func TestDefaultFields2(t *testing.T) {
 
 func TestDefaultFields3(t *testing.T) {
 	mystruct := MyStruct{}
-	expected := []string{"Field1", "Field2", "Field3"}
+	expected := []string{"Field1", "Field2", "Field3", "Field3a", "Field3b"}
 
 	result, err := SubsistuteDefaults(&mystruct, nil)
 	if err != nil {

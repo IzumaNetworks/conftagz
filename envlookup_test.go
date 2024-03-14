@@ -8,7 +8,7 @@ import (
 )
 
 func TestEnvFieldSubstitutionFromMap(t *testing.T) {
-	mystruct := MyStruct{"Value1", "Value2", 3, 0, false}
+	mystruct := MyStruct{"Value1", "Value2", 3, 0, 0, 0, false}
 
 	envMap := map[string]string{
 		"Important":          "NewValue1",
@@ -17,7 +17,7 @@ func TestEnvFieldSubstitutionFromMap(t *testing.T) {
 		"Field4":             "1", // bool
 	}
 
-	expected := []string{"Field1", "Field2", "Field3"}
+	expected := []string{"Field1", "Field2", "Field3", "Field3a", "Field3b"}
 
 	result, err := EnvFieldSubstitutionFromMap(&mystruct, &EnvFieldSubstOpts{ThrowErrorIfEnvMissing: true}, envMap)
 	if err != nil {
@@ -70,7 +70,7 @@ func TestEnvFieldSubstitutionFromEnviron(t *testing.T) {
 }
 
 func TestEnvFieldSubstitutionFromMap3(t *testing.T) {
-	mystruct := MyStruct{"Value1", "Value2", 3, 0, false}
+	mystruct := MyStruct{"Value1", "Value2", 3, 0, 0, 0, false}
 
 	envMap := map[string]string{
 		"Important":          "NewValue1",

@@ -57,6 +57,19 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 					return fmt.Errorf("default value %s has number out of range for %s", defaultval, sliceValue.Type().Elem().String())
 				}
 			}
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			for _, parsedVal := range parsedVals {
+				val, err := StringToUint64(parsedVal)
+				if err != nil {
+					return fmt.Errorf("default value %s not a number", defaultval)
+				}
+				// Change the value of the field to the tag value
+				if reflect.ValueOf(val).CanConvert(sliceValue.Type().Elem()) {
+					sliceValue.Set(reflect.Append(sliceValue, reflect.ValueOf(val).Convert(sliceValue.Type().Elem())))
+				} else {
+					return fmt.Errorf("default value %s has number out of range for %s", defaultval, sliceValue.Type().Elem().String())
+				}
+			}
 		case reflect.Float64, reflect.Float32:
 			for _, parsedVal := range parsedVals {
 				val, err := StringToFloat64(parsedVal)
@@ -121,6 +134,27 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 						return fmt.Errorf("default value %s not a int", defaultval)
 					}
 					fieldValue.SetInt(val)
+				}
+
+				ret = append(ret, addParentPath(parentpath, fieldName))
+			}
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			if fieldValue.IsZero() {
+				// Change the value of the field to the tag value
+				// first convert string to int
+				if f != nil {
+					v, ok := f(fieldName).(uint64)
+					if ok {
+						fieldValue.SetUint(v)
+					} else {
+						return fmt.Errorf("default func %s did not return an uint", matches[0][1])
+					}
+				} else {
+					val, err := StringToUint64(defaultval)
+					if err != nil {
+						return fmt.Errorf("default value %s not a uint", defaultval)
+					}
+					fieldValue.SetUint(val)
 				}
 
 				ret = append(ret, addParentPath(parentpath, fieldName))
@@ -199,6 +233,26 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 						return fmt.Errorf("default value %s not a int", defaultval)
 					}
 					fieldValue.Elem().SetInt(val)
+				}
+				ret = append(ret, addParentPath(parentpath, fieldName))
+			}
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			if fieldValue.Elem().IsZero() {
+				if f != nil {
+					v, ok := f(fieldName).(uint64)
+					if ok {
+						fieldValue.Elem().SetUint(v)
+					} else {
+						return fmt.Errorf("default func %s did not return an uint", matches[0][1])
+					}
+				} else {
+					// Change the value of the field to the tag value
+					// first convert string to int
+					val, err := StringToUint64(defaultval)
+					if err != nil {
+						return fmt.Errorf("default value %s not a uint", defaultval)
+					}
+					fieldValue.Elem().SetUint(val)
 				}
 				ret = append(ret, addParentPath(parentpath, fieldName))
 			}

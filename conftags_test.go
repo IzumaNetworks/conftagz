@@ -65,13 +65,13 @@ func TestProcessSelfParseFlags2(t *testing.T) {
 		UseFlags: flagset,
 		//		Args:     argz,
 	}
-	_, err := ProcessFlagTags(mystruct, flagtagopts)
+	processed, err := ProcessFlagTags(mystruct, flagtagopts)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
 	flagset.Parse(argz)
-
+	flagtagopts.Tags = processed
 	// expected := []string{"Field2"}
 
 	err = Process(&ConfTagOpts{

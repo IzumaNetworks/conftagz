@@ -4,6 +4,8 @@ type MyStruct struct {
 	Field1       string `yaml:"important" env:"Important" default:"Apple" flag:"important"`
 	Field2       string `json:"field2" env:"VeryImportant" default:"Banana" test:"~R.*[Ss]{1}$" flag:"veryimportant"`
 	Field3       int    `env:"ExtremelyImportant" default:"999" test:">=1024" flag:"extremelyimportant"`
+	Field3a      uint   `env:"ExtremelyImportant" default:"999" test:">=1024" flag:"extremelyimportant_a"`
+	Field3b      uint64 `env:"ExtremelyImportant" default:"999" test:">=1024" flag:"extremelyimportant_b"`
 	privateField int
 	Field4       bool `env:"Field4" flag:"field4"`
 }

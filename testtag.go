@@ -21,6 +21,7 @@ const (
 type testOp struct {
 	Operator     int
 	ValInt       int64
+	ValUint      uint64
 	ValString    string
 	ValFloat     float64
 	testFunc     TestFunc
@@ -111,6 +112,16 @@ func runTest(op *testConfOp, val reflect.Value, fieldName string) (err error) {
 				} else {
 					err = fmt.Errorf("value for field - can't get int64")
 				}
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				debugf("test LTE %d\n", op.ValUint)
+				if val.CanUint() {
+					if val.Uint() <= op.ValUint {
+					} else {
+						err = fmt.Errorf("value %d ! <= %d", val.Uint(), op.ValUint)
+					}
+				} else {
+					err = fmt.Errorf("value for field - can't get uint64")
+				}
 			case reflect.Float32, reflect.Float64:
 				debugf("test LTE %f\n", op.ValFloat)
 				if val.CanInt() {
@@ -136,6 +147,16 @@ func runTest(op *testConfOp, val reflect.Value, fieldName string) (err error) {
 					}
 				} else {
 					err = fmt.Errorf("value for field - can't get int64")
+				}
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				debugf("test GTE %d\n", op.ValUint)
+				if val.CanUint() {
+					if val.Uint() >= op.ValUint {
+					} else {
+						err = fmt.Errorf("value %d ! >= %d", val.Uint(), op.ValUint)
+					}
+				} else {
+					err = fmt.Errorf("value for field - can't get uint64")
 				}
 			case reflect.Float32, reflect.Float64:
 				debugf("test GTE %f\n", op.ValFloat)
@@ -165,6 +186,16 @@ func runTest(op *testConfOp, val reflect.Value, fieldName string) (err error) {
 				} else {
 					err = fmt.Errorf("value for field - can't get int64")
 				}
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				debugf("test LT %d\n", op.ValUint)
+				if val.CanUint() {
+					if val.Uint() < op.ValUint {
+					} else {
+						err = fmt.Errorf("value %d ! < %d", val.Uint(), op.ValUint)
+					}
+				} else {
+					err = fmt.Errorf("value for field - can't get uint64")
+				}
 			case reflect.Float32, reflect.Float64:
 				debugf("test LT %f\n", op.ValFloat)
 				if val.CanInt() {
@@ -191,6 +222,16 @@ func runTest(op *testConfOp, val reflect.Value, fieldName string) (err error) {
 					}
 				} else {
 					err = fmt.Errorf("value for field - can't get int64")
+				}
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				debugf("test GT %d\n", op.ValUint)
+				if val.CanUint() {
+					if val.Uint() > op.ValUint {
+					} else {
+						err = fmt.Errorf("value %d ! > %d", val.Int(), op.ValUint)
+					}
+				} else {
+					err = fmt.Errorf("value for field - can't get uint64")
 				}
 			case reflect.Float32, reflect.Float64:
 				debugf("test GT %f\n", op.ValFloat)
@@ -225,6 +266,16 @@ func runTest(op *testConfOp, val reflect.Value, fieldName string) (err error) {
 					}
 				} else {
 					err = fmt.Errorf("value for field - can't get int64")
+				}
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				debugf("test EQ %d\n", op.ValUint)
+				if val.CanUint() {
+					if val.Uint() == op.ValUint {
+					} else {
+						err = fmt.Errorf("value %d != %d", val.Int(), op.ValUint)
+					}
+				} else {
+					err = fmt.Errorf("value for field - can't get uint64")
 				}
 			case reflect.Float32, reflect.Float64:
 				debugf("test EQ %f\n", op.ValFloat)
@@ -374,6 +425,10 @@ func parseTestVal(tagval string) (ret *testConfOp, err error) {
 					if err == nil {
 						op.ValInt = val
 					}
+					valu, err := StringToUint64(op.ValString)
+					if err == nil {
+						op.ValUint = valu
+					}
 					valf, err := StringToFloat64(op.ValString)
 					if err == nil {
 						op.ValFloat = valf
@@ -384,11 +439,19 @@ func parseTestVal(tagval string) (ret *testConfOp, err error) {
 				// 		err = fmt.Errorf("test: regexp failed to compile: %s", err.Error())
 				// 	}
 				case LTE, GTE, LT, GT:
-					val, err := StringToInt64(op.ValString)
-					if err != nil {
-						return nil, fmt.Errorf("test value %s not a number", op.ValString)
+					var valu uint64
+					valu, err = StringToUint64(op.ValString)
+					if err == nil {
+						op.ValUint = valu
 					}
-					op.ValInt = val
+					val, err2 := StringToInt64(op.ValString)
+					if err2 == nil {
+						op.ValInt = val
+					}
+					if err != nil && err2 != nil {
+						err = fmt.Errorf("test: bad operand for test - could not coerce number: %s", tagval)
+						return
+					}
 				}
 			}
 			if ret == nil {
