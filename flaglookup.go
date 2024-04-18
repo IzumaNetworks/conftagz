@@ -106,7 +106,6 @@ type FlagFieldSubstOpts struct {
 	Tags     *ProcessedFlagTags
 }
 
-// EnvFieldSubstitutionFromMap is a function that takes a pointer to a struct
 func ProcessFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret *ProcessedFlagTags, err error) {
 	ret = &ProcessedFlagTags{}
 	if opts == nil {
@@ -421,129 +420,6 @@ func ProcessFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret *Pro
 		return retriever, nil
 	}
 
-	// var innerSubst func(parentpath string, somestruct interface{}) (err error)
-
-	// innerSubst = func(parentpath string, somestruct interface{}) (err error) {
-	// 	// Get the value of the input. This will be a reflect.Value
-	// 	valuePtr := reflect.ValueOf(somestruct)
-	// 	if valuePtr.Kind() != reflect.Ptr {
-	// 		return fmt.Errorf("not a pointer to a struct")
-	// 	}
-	// 	inputValue := valuePtr.Elem()
-	// 	// Get the type of the input. This will be a reflect.Type
-	// 	inputType := inputValue.Type()
-
-	// 	// verify that input is a struct
-	// 	if inputType.Kind() != reflect.Struct {
-	// 		return fmt.Errorf("not a struct")
-	// 	}
-
-	// 	// Iterate over all fields of the input
-	// 	for i := 0; i < inputType.NumField(); i++ {
-	// 		// Get the field, returns https://golang.org/pkg/reflect/#StructField
-	// 		field := inputType.Field(i)
-
-	// 		// Get the field tag value
-	// 		tag := field.Tag.Get("env")
-	// 		//			defaultval := field.Tag.Get("default")
-	// 		conftags := field.Tag.Get("conf")
-	// 		confops := processConfTagOptsValues(conftags)
-	// 		// check if confops has a 'skip' key
-	// 		if skipField(confops) {
-	// 			continue
-	// 		}
-	// 		if envSkip(confops) {
-	// 			continue
-	// 		}
-	// 		debugf("env: Field Name: %s, Env val: %s\n", field.Name, tag)
-	// 		// if len(defaultval) > 0 {
-	// 		// Get the field value
-	// 		fieldValue := inputValue.FieldByName(field.Name)
-	// 		// Only do substitution if the field value can be changed
-	// 		if !field.IsExported() {
-	// 			debugf("env: Field %s is not exported\n", field.Name)
-	// 			continue
-	// 		}
-	// 		if field.Type.Kind() == reflect.Ptr {
-	// 			// recurse
-	// 			fieldValue := inputValue.FieldByName(field.Name)
-	// 			// used to create a temp Value of any kind, based on the underlying
-	// 			// type of the Ptr - we use this to inspect the underlying type
-	// 			// if the type is a struct, we always create it
-	// 			// if the type is a string or number we create it only if we have a default
-	// 			// value
-	// 			t := fieldValue.Type()
-	// 			if fieldValue.IsNil() {
-	// 				debugf("env: Field %s is nil\n", field.Name)
-	// 				if skipIfNil(confops) {
-	// 					continue
-	// 				}
-	// 				switch t.Elem().Kind() {
-	// 				case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-	// 					debugf("env: Ptr: Underlying fundamental type: %s\n", t.Elem().Kind().String())
-	// 					// Does an env refenced exist?
-	// 					if _, ok := m[tag]; ok {
-	// 						fieldValue.Set(reflect.New(t.Elem()))
-	// 					}
-	// 				default:
-	// 					debugf("env: Got a NON-fundamental type: %s %s which is a %s\n", t.Kind().String(), t.Elem().String(), t.Elem().Kind().String())
-	// 					if fieldValue.CanSet() {
-	// 						if t.Elem().Kind() == reflect.Struct {
-	// 							fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
-	// 						} else {
-	// 							err = fmt.Errorf("default for %s underlying type unsupported", field.Name)
-	// 							return
-	// 						}
-	// 					} else {
-	// 						debugf("env: Field %s cannot be set (private ?)\n", field.Name)
-	// 					}
-	// 				}
-	// 			}
-
-	// 			if !fieldValue.IsNil() {
-	// 				// is this a Ptr to a struct?
-	// 				if t.Elem().Kind() == reflect.Struct {
-	// 					err := innerSubst(addParentPath(parentpath, field.Name), fieldValue.Elem().Addr().Interface())
-	// 					if err != nil {
-	// 						return err
-	// 					}
-	// 				} else {
-	// 					// nope then its just a fundamental type
-	// 					if len(tag) > 0 {
-	// 						err = setEnvValPtr(parentpath, field.Name, fieldValue, tag)
-	// 						if err != nil {
-	// 							return
-	// 						}
-	// 					}
-
-	// 				}
-	// 			}
-	// 		} else if field.Type.Kind() == reflect.Struct {
-	// 			// recurse
-	// 			fieldValue := inputValue.FieldByName(field.Name)
-	// 			// is this a Ptr to a struct?
-	// 			err := innerSubst(addParentPath(parentpath, field.Name), fieldValue.Addr().Interface())
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 		} else if fieldValue.CanSet() {
-	// 			if len(tag) > 0 {
-	// 				err = setEnvVal(parentpath, field.Name, fieldValue, tag)
-	// 				if err != nil {
-	// 					return
-	// 				}
-	// 			}
-	// 		} else {
-	// 			if len(tag) > 0 {
-	// 				return fmt.Errorf("env for %s cannot be set", field.Name)
-	// 			}
-	// 		}
-	// 		// }
-
-	// 	}
-	// 	return nil
-	// }
-
 	var findFlags func(parentpath string, somestruct interface{}) (err error)
 
 	findFlags = func(parentpath string, somestruct interface{}) (err error) {
@@ -719,9 +595,14 @@ func FinalizeFlags(tags *ProcessedFlagTags) (err error) {
 // and then calls FinalizeFlags
 func ProcessFlags(somestruct interface{}, opts *FlagFieldSubstOpts) (err error) {
 	var processed *ProcessedFlagTags
-	processed, err = ProcessFlagTags(somestruct, opts)
-	if err != nil {
-		return
+
+	_, ok := preprocessedStructFlags[somestruct]
+	if !ok {
+		processed, err = ProcessFlagTags(somestruct, opts)
+		if err != nil {
+			return
+		}
+		preprocessedStructFlags[somestruct] = processed
 	}
 	if opts == nil || opts.UseFlags == nil {
 		if !flag.Parsed() {
@@ -736,7 +617,16 @@ func ProcessFlags(somestruct interface{}, opts *FlagFieldSubstOpts) (err error) 
 			opts.UseFlags.Parse(argz)
 		}
 	}
-	err = FinalizeFlags(processed)
+	// err = FinalizeFlags(processed)
+	// if err != nil {
+	// 	return
+	// }
+	for _, v := range preprocessedStructFlags {
+		err = FinalizeFlags(v)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -745,13 +635,54 @@ func ProcessFlags(somestruct interface{}, opts *FlagFieldSubstOpts) (err error) 
 func ProcessFlagsWithFlagSet(somestruct interface{}, set *flag.FlagSet, argz []string) (err error) {
 	//	flagset := flag.NewFlagSet("test", flag.ExitOnError)
 	var processed *ProcessedFlagTags
+	_, ok := preprocessedStructFlags[somestruct]
+	if !ok {
+		processed, err = ProcessFlagTags(somestruct, &FlagFieldSubstOpts{
+			UseFlags: set,
+		})
+		if err != nil {
+			return
+		}
+		preprocessedStructFlags[somestruct] = processed
+	}
+	// processed, err = ProcessFlagTags(somestruct, &FlagFieldSubstOpts{
+	// 	UseFlags: set,
+	// })
+	// if err != nil {
+	// 	return
+	// }
+	set.Parse(argz)
+	// err = FinalizeFlags(processed)
+	// if err != nil {
+	// 	return
+	// }
+	for _, v := range preprocessedStructFlags {
+		err = FinalizeFlags(v)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+var preprocessedStructFlags map[interface{}]*ProcessedFlagTags
+
+func init() {
+	preprocessedStructFlags = make(map[interface{}]*ProcessedFlagTags)
+}
+
+// Use this to add in all flags from a given struct *before* flags.Parse() is called anywhere.
+// flags.Parse could be handled by the caller later, OR it may be handled by the conftagz.Process()
+// function.
+func PreProcessFlagsWithFlagSet(somestruct interface{}, set *flag.FlagSet) (err error) {
+	//	flagset := flag.NewFlagSet("test", flag.ExitOnError)
+	var processed *ProcessedFlagTags
 	processed, err = ProcessFlagTags(somestruct, &FlagFieldSubstOpts{
 		UseFlags: set,
 	})
 	if err != nil {
 		return
 	}
-	set.Parse(argz)
-	err = FinalizeFlags(processed)
+	preprocessedStructFlags[somestruct] = processed
 	return
 }

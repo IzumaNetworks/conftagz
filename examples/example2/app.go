@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -35,9 +36,15 @@ type Config struct {
 	LogSetup   *LogSetup `yaml:"log_setup" conf:"envskip" default:"$(defaultLogSetup)"`
 }
 
+type AnotherStruct struct {
+	AnotherField string `env:"ANOTHERFIELD" flag:"anotherfield"`
+}
+
 func main() {
 	var config Config
 
+	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
+	someotherflag := flagset.Bool("someotherflag", false, "Test if a flag not in confg struct is fine")
 	// load config file from yaml using yaml parser
 	// Read the yaml file
 	data, err := os.ReadFile("config.yaml")
@@ -63,13 +70,45 @@ func main() {
 
 	conftagz.RegisterDefaultFunc("defaultLogSetup", defaultLogSetupFunc)
 
+	var anotherstuct AnotherStruct
+
+	conftagz.PreProcessFlagsWithFlagSet(&anotherstuct, flagset)
+
 	// Run conftagz on the config struct
 	// to validate the config, sub any env vars, and put in defaults for missing items
-	err2 := conftagz.Process(nil, &config)
+	// pass in the optionn to use our own flag set
+	err2 := conftagz.Process(&conftagz.ConfTagOpts{
+		FlagTagOpts: &conftagz.FlagFieldSubstOpts{
+			UseFlags: flagset,
+		},
+	}, &config)
+
 	if err2 != nil {
 		log.Fatalf("Config is bad: %v\n", err2)
 	} else {
 		fmt.Printf("Config good.\n")
+	}
+
+	// You can call conftagz on multiple structs also
+	// and with the same flag options if needed
+	err2 = conftagz.Process(&conftagz.ConfTagOpts{
+		FlagTagOpts: &conftagz.FlagFieldSubstOpts{
+			UseFlags: flagset,
+		},
+	}, &anotherstuct)
+
+	if err2 != nil {
+		log.Fatalf("AnotherStruct is bad: %v\n", err2)
+	} else {
+		fmt.Printf("AnotherStruct good.\n")
+	}
+
+	if *someotherflag {
+		fmt.Printf("someotherflag is set\n")
+	}
+
+	if anotherstuct.AnotherField != "" {
+		fmt.Printf("AnotherField: %v\n", anotherstuct.AnotherField)
 	}
 
 	fmt.Printf("Config: %+v\n", config)
