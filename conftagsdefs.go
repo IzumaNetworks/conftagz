@@ -53,7 +53,7 @@ func mustEnv(confops map[string]string) bool {
 	return false
 }
 
-// The env var processing is enitrely skipped
+// The env var processing is entirely skipped
 // for this field. Useful if you don't want a blank struct created
 // while looking for env vars
 func envSkip(confops map[string]string) bool {
