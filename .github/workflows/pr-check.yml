@@ -1,0 +1,52 @@
+name: PR-checks
+on: 
+    # Allow triggering the workflow via the GitHub UI
+    workflow_dispatch:
+
+    # Don't run if only the .md -file is changed
+    push:
+        paths-ignore:
+            - '**/*.md'
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: flowmata-'${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  pr-checks:
+    strategy:
+      matrix:
+        golang-ver: ["1.22"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Set up golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.golang-ver }}
+      - run: go version
+      - run: | 
+          sudo apt-get update && \
+          DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y golint
+      - name: go build
+        run: go build ./...
+      - name: go vet
+        if: always()
+        run: go vet ./...
+      - name: golint
+        if: always()
+        run: |
+            sudo apt-get update && \
+            DEBIAN_FRONTEND="noninteractive" sudo apt-get update && sudo apt-get install -y golint
+            golint ./...
+      - name: go test
+        if: always()
+        run: go test ./...
+      - name: Install & run misspell
+        if: always()
+        run: |
+            go install github.com/golangci/misspell/cmd/misspell@v0.5.1
+            misspell -v
+            misspell -i mosquitto,conftagz .

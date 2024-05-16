@@ -93,7 +93,6 @@ Config: {https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXX
 2024/02/13 11:05:07 Config is bad: field Port: value 33 ! >= 1024
 ```
 
-
 ## What this is
 
 An attempt to avoid repetitive, tedious, and slightly buggy code when reading and validating configuration files.
@@ -124,14 +123,14 @@ All tags are optional. Fields with no tag above are just ignored.
 
 ## Behavior and type support
 
-`conftagz` behavior is specifcally designed to complement the behavior of the `yaml.v2` parser that almost everyone uses. 
+`conftagz` behavior is specifically designed to complement the behavior of the `yaml.v2` parser that almost everyone uses.
 
 Obviously, `conftagz` makes uses of the `reflect` package to do all this.
 
 ### Type support:
 
 Fundamental types:
-- `int`, `int16`, `int32`, `int64` and unsigned varaints
+- `int`, `int16`, `int32`, `int64` and unsigned variants
 - `bool` (not supported by `default:` tag as unnecessary)
 - `float32` and `float64`
 - `string` ... `conftagz` uses the golang regex std library for regex tests
@@ -176,7 +175,7 @@ type SSLStuff struct {
 }
 ```
 
-`conftagz` will follow the struct pointer. If the struct is nil, it will create a new struct. This struct will have all zero values in it just as it were created with a `new()` call. This is necessary for go relfection to follow the struct and inspect its fields. If env vars stated are found it will assign their value to the field.
+`conftagz` will follow the struct pointer. If the struct is nil, it will create a new struct. This struct will have all zero values in it just as it were created with a `new()` call. This is necessary for go reflection to follow the struct and inspect its fields. If env vars stated are found it will assign their value to the field.
 
 The behavior of automatically creating a struct from a `nil` pointer by the `conftagz` env substituter can be avoided with `skip`, `skipnil`, or `envskip` `conf:` tags:
 
@@ -240,7 +239,7 @@ The `test:` tag allows one or more tests to be performed on a field. By default,
 
 ### Numeric fields
 
-For numeric fields, `test:` supports: `>VAL`,`<VAL`,`>=VAL`,`<=VAL`,`==VAL`. Tests can be combined, comma seperated which will casue logical `&&` behavior.
+For numeric fields, `test:` supports: `>VAL`,`<VAL`,`>=VAL`,`<=VAL`,`==VAL`. Tests can be combined, comma separated which will cause logical `&&` behavior.
 
 For instance:
 
@@ -256,7 +255,7 @@ String fields have regex support:
 	WebhookURL string    `yaml:"webhook_url" test:"~https://.*"`
 ```
 
-Regex uses the standard regex golang library. The regex expression should start with a `~` to indicate its a regex expression. The expresison must `Regexp.Match()` the value or an error will be returned by `.Process()`
+Regex uses the standard regex golang library. The regex expression should start with a `~` to indicate its a regex expression. The expressions must `Regexp.Match()` the value or an error will be returned by `.Process()`
 
 The regex is the only built-in test supported for string at the moment.
 
@@ -317,7 +316,7 @@ RegisterTestFunc("field1test", field1func)
 RegisterTestFunc("fieldinnerstruct2test", fieldstructfunc)
 ```
 
-Custom functions allow various arbitrary tests. Becasue the function signature is the same regardless of type, the same function can be used for different types if needed.
+Custom functions allow various arbitrary tests. Because the function signature is the same regardless of type, the same function can be used for different types if needed.
 
 ## Running
 
