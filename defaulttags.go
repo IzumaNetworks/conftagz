@@ -7,8 +7,11 @@ import (
 	"strings"
 )
 
+type PostProcessFuncStrings func(defaultval string) string
+
 type DefaultFieldSubstOpts struct {
 	// throws an error if the environment variable is not found
+	PostProcessDefaultString PostProcessFuncStrings
 }
 
 type DefaultFunc func(fieldname string) interface{}
@@ -41,6 +44,9 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 		case reflect.String:
 			for _, parsedVal := range parsedVals {
 				// Change the value of the field to the tag value
+				if opts != nil && opts.PostProcessDefaultString != nil {
+					parsedVal = opts.PostProcessDefaultString(parsedVal)
+				}
 				sliceValue.Set(reflect.Append(sliceValue, reflect.ValueOf(parsedVal)))
 			}
 			// TODO add float
@@ -108,11 +114,17 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 				if f != nil {
 					v, ok := f(fieldName).(string)
 					if ok {
+						if opts != nil && opts.PostProcessDefaultString != nil {
+							v = opts.PostProcessDefaultString(v)
+						}
 						fieldValue.SetString(v)
 					} else {
 						return fmt.Errorf("default func %s did not return a string", matches[0][1])
 					}
 				} else {
+					if opts != nil && opts.PostProcessDefaultString != nil {
+						defaultval = opts.PostProcessDefaultString(defaultval)
+					}
 					fieldValue.SetString(defaultval)
 				}
 				ret = append(ret, addParentPath(parentpath, fieldName))
@@ -206,12 +218,18 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 				if f != nil {
 					v, ok := f(fieldName).(string)
 					if ok {
+						if opts != nil && opts.PostProcessDefaultString != nil {
+							v = opts.PostProcessDefaultString(v)
+						}
 						fieldValue.Elem().SetString(v)
 					} else {
 						return fmt.Errorf("default func %s did not return a string", matches[0][1])
 					}
 				} else {
 					// Change the value of the field to the tag value
+					if opts != nil && opts.PostProcessDefaultString != nil {
+						defaultval = opts.PostProcessDefaultString(defaultval)
+					}
 					fieldValue.Elem().SetString(defaultval)
 				}
 				ret = append(ret, addParentPath(parentpath, fieldName))
@@ -368,6 +386,11 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 							debugf("default: Ptr: Underlying fundamental type: %s\n", t.Elem().Kind().String())
 							if f != nil {
 								if fresultType.Kind() == reflect.Ptr && fresultType.Elem().Kind() == t.Elem().Kind() {
+									if fresultType.Elem().Kind() == reflect.String {
+										if opts != nil && opts.PostProcessDefaultString != nil {
+											fresult = opts.PostProcessDefaultString(fresult.(string))
+										}
+									}
 									fieldValue.Set(reflect.ValueOf(fresult))
 									ret = append(ret, addParentPath(parentpath, field.Name))
 									continue

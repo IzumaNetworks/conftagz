@@ -17,7 +17,7 @@ import (
 
 type Config struct {
 	WebhookURL string `yaml:"webhook_url" env:"APP_HOOK_URL" test:"~https://.*"`
-	Port       int    `yaml:"port" env:"APP_PORT" default:"8888" flag:"port" test:">=1024,<65537"`
+	Port       int    `yaml:"port" env:"APP_PORT" default:"8888" flag:"port" test:">=1024,<65537" usage:"Listen on port"`
 	Expiration string `yaml:"expiration" default:"1h" test:"$(validtimeduration)"`
 	DebugMode  bool   `yaml:"debug_mode" env:"DEBUG" flag:"debug"`
 }

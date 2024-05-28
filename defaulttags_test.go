@@ -114,6 +114,35 @@ func TestDefaultFieldsWithStruct2(t *testing.T) {
 	assert.Nil(t, mystruct.InnerPtr)
 }
 
+func TestDefaultFieldsWithStruct2Post(t *testing.T) {
+	mystruct := MyStructWithStruct2{"", "Value2", 0, "?", nil, nil, 0, nil, InnerStruct{"", nil, innerStruct{0}}, nil, nil, nil}
+
+	expected := []string{"Field1", "Field3", "Field5", "Field6", "Inner.FieldInner1"}
+
+	addZZ := func(val string) string {
+		return val + "zz"
+	}
+
+	result, err := SubsistuteDefaults(&mystruct, &DefaultFieldSubstOpts{PostProcessDefaultString: addZZ})
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Expected %v, but got %v", expected, result)
+	}
+
+	assert.Equal(t, "Applezz", mystruct.Field1)
+	assert.Equal(t, mystruct.Field3, 999)
+	assert.Equal(t, mystruct.Field2, "Value2")
+	assert.Equal(t, mystruct.Field4, "?")
+	assert.Equal(t, "Eggszz", *mystruct.Field5)
+	assert.Equal(t, int32(701), *mystruct.Field6)
+	//	assert.Equal(t, mystruct.InnerPtr.FieldInner1, "InnerApple")
+	assert.Equal(t, "InnerApplezz", mystruct.Inner.FieldInner1)
+	assert.Nil(t, mystruct.InnerPtr)
+}
+
 func TestDefaultFieldsWithStructStringExists(t *testing.T) {
 	newstring := "NewString"
 	mystruct := MyStructWithStruct{"", "Value2", 0, "?", &newstring, nil, nil, InnerStruct{"", nil, innerStruct{0}}}
