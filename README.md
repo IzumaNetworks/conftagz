@@ -93,17 +93,24 @@ Config: {https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXX
 2024/02/13 11:05:07 Config is bad: field Port: value 33 ! >= 1024
 ```
 
-## What this is
+## Motivation
 
-An attempt to avoid repetitive, tedious, and slightly buggy code when reading and validating configuration files.
+There are many powerful and complicated libraries for configuration options and flags. [cobra](https://github.com/spf13/cobra), [viper](https://github.com/spf13/viper), [kong](https://github.com/alecthomas/kong), etc. But frankly software is already complex enough - and the last thing I wanted is some complicated library to just process command line arguments and config files. `conftagz` is the antithesis of these approaches.
 
-A common pattern with cloud apps is to specify a config file format in YAML, JSON or similar. And then to:
-- Parse that YAML into some `MyConfig` struct which has struct tags for the parser
+When I go back to look at something from months ago - I want it to be super easy to figure out what's going on with the conf files and flags... Nor do I want to be confined to a specific way to layout components, or have to call dozens of library functions just to get the CLI options.
+
+### Just use struct tags
+
+Use structs + tags to define everything. Run `Process()` and that's it. No, it does not do even 1/8 the things cobra does. If you need that use cobra or one of the other fine options above.
+
+A common pattern with cloud apps is to specify a config file format in YAML, JSON or similar - as a struct(s) in Go. And then to:
+- Parse that YAML into some `MyConfig`-like struct
 - Check if all the values are valid
-- Potentially override certain items in the struct with environmental variables if present
+- Override certain items with environmental variables if present
 - Set defaults on values with a *zero* value
+- Maybe replace some value with CLI flags
 
-The order of operation and priority of these steps might differ here and there. But the gneral pattern is common.
+You can do all this with just struct tags using this package. Then make one call to `conftagz.Process()`
 
 ## The tags of `conftagz`
 
@@ -113,7 +120,7 @@ A `flag:` and (optional) `usage:` tag. This allows setting specific struct field
 
 A `env:` struct tag which will replace the value of the field with the contents of the env var if present.
 
-A `test:` struct tag which provides some basic tests (comprison, regex) or allows the calling of a custom func to check a value.
+A `test:` struct tag which provides some basic validation (comparison, regex) or allows the calling of a custom func to check a value.
 
 A `default:` struct tag which will replace any empty field with given value if no other method provides a value.
 
@@ -134,7 +141,7 @@ Fundamental types:
 - `bool` (not supported by `default:` tag as unnecessary)
 - `float32` and `float64`
 - `string` ... `conftagz` uses the golang regex std library for regex tests
-- pointers to all the above - `conftagz` will create the item if the pointer is nil _and_ a default or env var apply
+- pointers to all the above - `conftagz` will create the item if the pointer is nil _and_ a default or env var are applied.
 
 Structs & Slices
 - Supports both and also their pointers
@@ -213,25 +220,26 @@ Once the new struct is created, it will follow it and assign any defaults provid
 
 ### Default functions
 
-Sometimes a simple string value for a default won't cut it. Also, often defaults for structs and slices need more logic than a constant for an assignment. For this reason `default:` can call a registered `DefaultFunc`
+Sometimes a simple string value for a default won't cut it. Also, often defaults for structs and slices need more logic than a constant for an assignment. For this reason `default:` can call a registered function meeting the `DefaultFunc` spec:
 
 ```go
 Field1        string        `yaml:"field1" default:"$(field1default)"`
 ```
 
-and before calling `conftagz`:
+and before calling `conftagz` make sure the function is defined:
 
 ```go
 field1func := func(fieldname string) interface{} {
     return "field1funcval"
 }
 
+Register it:
 ...
 
 conftagz.RegisterDefaultFunc("field1default", field1func)
 ```
 
-If `Field` is empty, then `field1func()` will be called, and it return value assigned.
+Then if `Field` is empty, then `field1func()` is called and its return value if assigned.
 
 ## `test:` tag
 
@@ -318,9 +326,9 @@ RegisterTestFunc("fieldinnerstruct2test", fieldstructfunc)
 
 Custom functions allow various arbitrary tests. Because the function signature is the same regardless of type, the same function can be used for different types if needed.
 
-## Running
+## Processing structs
 
-The easiest way to use is:
+The easiest way to use conftagz is:
 
 ```go
 	err2 := conftagz.Process(nil, &config)
@@ -333,7 +341,8 @@ The easiest way to use is:
 ```
 
 By default, `Process()` does the following in order:
-- Runs the env subsituter: `EnvFieldSubstitution()`
+- Runs the flag substiturer: `ProcessFlags()`
+- Runs the env var subsituter: `EnvFieldSubstitution()`
 - Runs the default subsiturer `SubsistuteDefaults()`
 - Runs the tests `RunTestFlags()`
 

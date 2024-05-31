@@ -10,6 +10,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// Example with multiple structs
+
 type Server struct {
 	IP   string `yaml:"ip" test:"~[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$"`
 	Name string `yaml:"name" test:"~.+"`
