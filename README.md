@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/IzumaNetworks/conftagz"
+	"go.izuma.io/conftagz"
 	"gopkg.in/yaml.v2"
 )
 

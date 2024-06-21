@@ -1,4 +1,4 @@
-module github.com/IzumaNetworks/conftagz
+module go.izuma.io/conftagz
 
 go 1.21
 
