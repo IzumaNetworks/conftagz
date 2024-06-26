@@ -345,7 +345,7 @@ The easiest way to use conftagz is:
 By default, `Process()` does the following in order:
 - Runs the default subsiturer `SubsistuteDefaults()`
 - Runs the env var subsituter: `EnvFieldSubstitution()`
-- Runs the flag substiturer: `ProcessFlags()`
+- Runs the flag substiturer: `ProcessFlags()` or `PostProcessCobraFlags()` (if `PreProcessCobraFlags()` was called) 
 - Runs the tests `RunTestFlags()`
 
 The order can be changed with the options. By default command line switches if present override everything else.
