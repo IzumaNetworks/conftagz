@@ -372,43 +372,43 @@ type AnotherStruct struct {
 ```
 Follow this general pattern to use cobra with conftagz:
 ```go
-	var rootCmd = &cobra.Command{
-		Use:   "app",
-		Short: "A simple CLI application",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// implement your command
-			...
-			return nil
-		},
-	}
-	// register your command with conftagz. Reference rootCmd with 'root' in your struct tag
-	conftagz.RegisterCobraCmd("root", rootCmd)
-	var otherCmd = &cobra.Command{
-		Use:   "othercmd",
-		Short: "Another command",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return nil
-		},
-	}
-	// another one
-	conftagz.RegisterCobraCmd("othercmd", otherCmd)
+var rootCmd = &cobra.Command{
+	Use:   "app",
+	Short: "A simple CLI application",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// implement your command
+		...
+		return nil
+	},
+}
+// register your command with conftagz. Reference rootCmd with 'root' in your struct tag
+conftagz.RegisterCobraCmd("root", rootCmd)
+var otherCmd = &cobra.Command{
+	Use:   "othercmd",
+	Short: "Another command",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return nil
+	},
+}
+// another one
+conftagz.RegisterCobraCmd("othercmd", otherCmd)
 
-	// run PreProcessCobraFlags for all struct with cobra tags
-	err = conftagz.PreProcessCobraFlags(&config, nil)
-	err = conftagz.PreProcessCobraFlags(&anotherstuct, nil)
+// run PreProcessCobraFlags for all struct with cobra tags
+err = conftagz.PreProcessCobraFlags(&config, nil)
+err = conftagz.PreProcessCobraFlags(&anotherstuct, nil)
 
-	rootCmd.AddCommand(otherCmd)
-	// Force cobra to parse the flags before runing conftagz.Process
-	// You will need to parse all the flags for all the commands
-	// which have any conftagz fields
-	rootCmd.ParseFlags(os.Args)
-	otherCmd.ParseFlags(os.Args)
+rootCmd.AddCommand(otherCmd)
+// Force cobra to parse the flags before runing conftagz.Process
+// You will need to parse all the flags for all the commands
+// which have any conftagz fields
+rootCmd.ParseFlags(os.Args)
+otherCmd.ParseFlags(os.Args)
 
-	// Run conftagz on the structs
-	err2 := conftagz.Process(nil, &config)
-	err2 = conftagz.Process(nil, &anotherstuct)
+// Run conftagz on the structs
+err2 := conftagz.Process(nil, &config)
+err2 = conftagz.Process(nil, &anotherstuct)
 
-	// your structs should be filled in if flags were used
+// your structs should be filled in if flags were used
 ```
 
 See `examples/examplecobra` for a fully working example.
