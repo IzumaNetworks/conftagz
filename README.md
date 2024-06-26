@@ -118,6 +118,8 @@ You can do all this with just struct tags using this package. Then make one call
 
 A `flag:` and (optional) `usage:` tag. This allows setting specific struct fields to be set by a command line flag. Uses the standrd `flag` package.
 
+A `cflag:` `usage:` and `cobra:` flag allow you to use [cobra](https://github.com/spf13/cobra) instead of the normal stdlib `flags` package. See [Using Cobra for flags](#using-cobra-for-flags) section.
+
 A `env:` struct tag which will replace the value of the field with the contents of the env var if present.
 
 A `test:` struct tag which provides some basic validation (comparison, regex) or allows the calling of a custom func to check a value.
@@ -350,8 +352,69 @@ The order can be changed with the options.
 
 Each of the above can also be called by itself. See test cases for more info.
 
+## Using Cobra for flags
+
+Given something like this:
+```go
+type Config struct {
+	WebhookURL string    `yaml:"webhook_url" cflag:"webhookurl" usage:"URL to send webhooks to" cobra:"root"`
+	Port       int       `yaml:"port" test:">=1024,<65537" cflag:"port" usage:"Port to listen on" cobra:"root"`
+	SSL        *SSLStuff `yaml:"sslstuff"`
+	Servers    []*Server `yaml:"servers"`
+	// both a long and short --verbose or -v
+	// cobra 'persistent' flag here
+	Verbose bool `yaml:"verbose" env:"APP_VERBOSE" cflag:"verbose,v" usage:"Verbose output" cobra:"root,persistent"`
+}
+
+type AnotherStruct struct {
+	AnotherField string `env:"ANOTHERFIELD" cflag:"anotherfield" cobra:"othercmd"`
+}
+```
+Follow this general pattern to use cobra with conftagz:
+```go
+	var rootCmd = &cobra.Command{
+		Use:   "app",
+		Short: "A simple CLI application",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// implement your command
+			...
+			return nil
+		},
+	}
+	// register your command with conftagz. Reference rootCmd with 'root' in your struct tag
+	conftagz.RegisterCobraCmd("root", rootCmd)
+	var otherCmd = &cobra.Command{
+		Use:   "othercmd",
+		Short: "Another command",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return nil
+		},
+	}
+	// another one
+	conftagz.RegisterCobraCmd("othercmd", otherCmd)
+
+	// run PreProcessCobraFlags for all struct with cobra tags
+	err = conftagz.PreProcessCobraFlags(&config, nil)
+	err = conftagz.PreProcessCobraFlags(&anotherstuct, nil)
+
+	rootCmd.AddCommand(otherCmd)
+	// Force cobra to parse the flags before runing conftagz.Process
+	// You will need to parse all the flags for all the commands
+	// which have any conftagz fields
+	rootCmd.ParseFlags(os.Args)
+	otherCmd.ParseFlags(os.Args)
+
+	// Run conftagz on the structs
+	err2 := conftagz.Process(nil, &config)
+	err2 = conftagz.Process(nil, &anotherstuct)
+
+	// your structs should be filled in if flags were used
+```
+
+See `examples/examplecobra` for a fully working example.
+
 ## Examples
 
 More docs to follow. See the `examples` folder for more examples.
 
-Also refer to the `_test` files for more.
+Also refer to the test files for more.

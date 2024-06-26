@@ -103,6 +103,8 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 				debugf("default: Found a default func (setDefault): %s\n", matches[0][1])
 				f = defaultFuncs[matches[0][1]]
 			}
+		} else {
+			debugf("default: No default func found for %s\n", fieldName)
 		}
 
 		k := fieldValue.Kind()
@@ -208,6 +210,8 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 				debugf("default: Found a default func (setDefaultPtr): %s\n", matches[0][1])
 				f = defaultFuncs[matches[0][1]]
 			}
+		} else {
+			debugf("default (ptr): No default func found for %s\n", fieldName)
 		}
 
 		k := fieldValue.Elem().Kind()
@@ -355,8 +359,8 @@ func SubsistuteDefaults(somestruct interface{}, opts *DefaultFieldSubstOpts) (re
 				t := fieldValue.Type()
 				if fieldValue.IsNil() {
 					debugf("Field %s is nil\n", field.Name)
-					if skipIfNil(confops) {
-						debugf("default: skipping b/c of skipnil tag %s\n", field.Name)
+					if skipIfNil(confops) && !nilDefault(confops) {
+						debugf("default: skipping b/c of skipnil (and no nildefault) tag %s\n", field.Name)
 						continue
 					}
 					// check if the default tag is func

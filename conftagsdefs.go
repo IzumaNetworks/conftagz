@@ -30,6 +30,16 @@ func skipField(confops map[string]string) bool {
 	return false
 }
 
+// if the value is nil, run the default logic anyway
+// even if skipnil is set
+func nilDefault(confops map[string]string) bool {
+	if _, ok := confops["nildefault"]; ok {
+		// skip this field
+		return true
+	}
+	return false
+}
+
 func skipIfNil(confops map[string]string) bool {
 	if _, ok := confops["skipnil"]; ok {
 		// skip this field

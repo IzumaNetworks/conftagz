@@ -1,0 +1,10 @@
+webhook_url: https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX
+port: 8080
+sslstuff:
+  cert: adasdaskdalksdhajksdhajksdhaksjd
+  key: asdklasjdkajsdklasjdlkasjdklajsd
+servers:
+  - name: server1
+    ip: 192.168.1.1
+  - name: server2
+    ip: 192.168.2.1
