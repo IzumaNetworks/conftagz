@@ -1,5 +1,5 @@
-//go:build debug
-// +build debug
+//go:build debugconftagz
+// +build debugconftagz
 
 package conftagz
 
