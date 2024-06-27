@@ -1,5 +1,9 @@
 # conftagz
 
+```
+go get go.izuma.io/conftagz
+```
+
 ## Quick Example
 
 ```go
