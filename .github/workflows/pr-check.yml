@@ -34,13 +34,27 @@ jobs:
         run: go build ./...
       - name: go vet
         if: always()
-        run: go vet ./...
+        run: |
+          echo echo "## go vet" >> $GITHUB_STEP_SUMMARY
+          go vet -set_exit_status ./... |tee govet.log >> $GITHUB_STEP_SUMMARY
       - name: golint
         if: always()
         run: |
             sudo apt-get update && \
             DEBIAN_FRONTEND="noninteractive" sudo apt-get update && sudo apt-get install -y golint
-            golint ./...
+            echo "## Golint" >> $GITHUB_STEP_SUMMARY
+            golint  ./... |tee golint.log >> $GITHUB_STEP_SUMMARY
       - name: go test
         if: always()
-        run: go test ./...
+        run: |
+          echo "Go test" >> $GITHUB_STEP_SUMMARY
+          go test ./... |tee gotest.log >> $GITHUB_STEP_SUMMARY
+      - name: Archive logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Logs
+          path: |
+            golint.log
+            govet.log
+            gotest.log
