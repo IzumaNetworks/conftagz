@@ -18,7 +18,7 @@ type ConfStruct struct {
 }
 
 func TestProcessSelfParseFlags(t *testing.T) {
-
+	ResetGlobals()
 	mystruct := &ConfStruct{"Value1", "", 1111, 0, false}
 	// assume conf file already read
 	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
@@ -52,12 +52,12 @@ func TestProcessSelfParseFlags(t *testing.T) {
 
 	assert.Equal(t, "Banana", mystruct.Field1)
 	assert.Equal(t, "Razzles", mystruct.Field2)
-	assert.Equal(t, mystruct.Field3, 8888)
+	assert.Equal(t, 8888, mystruct.Field3)
 	assert.Equal(t, true, mystruct.Field4)
 }
 
 func TestProcessSelfParseFlags2(t *testing.T) {
-
+	ResetGlobals()
 	mystruct := &ConfStruct{"Value1", "", 1111, 0, false}
 	// assume conf file already read
 	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
@@ -90,7 +90,7 @@ func TestProcessSelfParseFlags2(t *testing.T) {
 
 	assert.Equal(t, "Banana", mystruct.Field1)
 	assert.Equal(t, "Randoms", mystruct.Field2)
-	assert.Equal(t, mystruct.Field3, 8888)
+	assert.Equal(t, 8888, mystruct.Field3)
 	assert.Equal(t, false, mystruct.Field4)
 }
 
@@ -104,7 +104,7 @@ type ConfStructCobra struct {
 }
 
 func TestProcessCobraTags(t *testing.T) {
-
+	ResetGlobals()
 	mystruct := &ConfStructCobra{"Value1", "", 1111, 0, false}
 	// assume conf file already read
 	argz := []string{"--important", "Banana", "--extremelyimportant", "8888"}

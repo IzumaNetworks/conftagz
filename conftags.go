@@ -15,6 +15,12 @@ func defaultOrderOfOps() []int {
 
 var usingCobraFlags bool
 
+// mostly just used for testing the library. Returns library to the state it should be on
+// initial load
+func ResetGlobals() {
+	usingCobraFlags = false
+}
+
 // this just takes the current order of ops,
 // and if it sees FLAGTAGS, it replaces it with COBRATAGS
 func switchOrderOfOpsToCobra() []int {
