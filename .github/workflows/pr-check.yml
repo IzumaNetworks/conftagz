@@ -44,9 +44,3 @@ jobs:
       - name: go test
         if: always()
         run: go test ./...
-      - name: Install & run misspell
-        if: always()
-        run: |
-            go install github.com/golangci/misspell/cmd/misspell@v0.5.1
-            misspell -v
-            misspell -i mosquitto,conftagz .

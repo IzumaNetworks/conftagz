@@ -140,7 +140,7 @@ func main() {
 
 	// make sure to add all commands before parsing flags
 	rootCmd.AddCommand(otherCmd)
-	// Force cobra to parse the flags before runing conftagz.Process
+	// Force cobra to parse the flags before running conftagz.Process
 	// You will need to parse all the flags for all the commands
 	// which have any conftagz fields
 	rootCmd.ParseFlags(os.Args)

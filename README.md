@@ -402,7 +402,7 @@ err = conftagz.PreProcessCobraFlags(&config, nil)
 err = conftagz.PreProcessCobraFlags(&anotherstuct, nil)
 
 rootCmd.AddCommand(otherCmd)
-// Force cobra to parse the flags before runing conftagz.Process
+// Force cobra to parse the flags before running conftagz.Process
 // You will need to parse all the flags for all the commands
 // which have any conftagz fields
 rootCmd.ParseFlags(os.Args)
