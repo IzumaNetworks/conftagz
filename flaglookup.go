@@ -154,7 +154,7 @@ func ProcessFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret *Pro
 				retriever = &flagSetRetriever{fieldName: fieldName, fieldValue: fieldValue}
 				retriever.retrievers = append(retriever.retrievers, retrieverfunc)
 
-				//				myflags.BoolVar(s, tag, false, usagetag)
+				// myflags.BoolVar(s, tag, false, usagetag)
 				myflags.BoolFunc(tag, usagetag, func(s string) error {
 					v := new(bool)
 					retriever.val = v
@@ -212,7 +212,7 @@ func ProcessFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret *Pro
 						if ok {
 							fieldValue.SetInt(*s)
 						} else {
-							return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+							return fmt.Errorf("flag %s underlying interface{} type coercion failed", tag)
 						}
 					}
 				}
@@ -247,7 +247,7 @@ func ProcessFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret *Pro
 						if ok {
 							fieldValue.SetUint(*s)
 						} else {
-							return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+							return fmt.Errorf("flag %s underlying interface{} type coercion failed", tag)
 						}
 					}
 				}
@@ -325,7 +325,7 @@ func ProcessFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret *Pro
 						if ok {
 							fieldValue.Elem().SetString(*s)
 						} else {
-							return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+							return fmt.Errorf("flag %s underlying interface{} type coercion failed", tag)
 						}
 					}
 				}
@@ -355,7 +355,7 @@ func ProcessFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret *Pro
 						if ok {
 							fieldValue.Elem().SetInt(*s)
 						} else {
-							return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+							return fmt.Errorf("flag %s underlying interface{} type coercion failed", tag)
 						}
 					}
 				}
@@ -389,7 +389,7 @@ func ProcessFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret *Pro
 						if ok {
 							fieldValue.Elem().SetUint(*s)
 						} else {
-							return fmt.Errorf("flag %s underlying interface{} type coercsion failed", tag)
+							return fmt.Errorf("flag %s underlying interface{} type coercion failed", tag)
 						}
 					}
 				}
