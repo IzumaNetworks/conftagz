@@ -1,5 +1,8 @@
 # conftagz
 
+[![License](https://img.shields.io/:license-apache-blue.svg)](LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/go.izuma.io/conftagz)](https://goreportcard.com/report/go.izuma.io/IzumaNetworks/conftagz)
+
 ```
 go get go.izuma.io/conftagz
 ```
