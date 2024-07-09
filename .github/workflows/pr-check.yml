@@ -35,19 +35,16 @@ jobs:
       - name: go vet
         if: always()
         run: |
-          echo echo "## go vet" >> $GITHUB_STEP_SUMMARY
+          echo "## go vet" >> $GITHUB_STEP_SUMMARY
           go vet -set_exit_status ./... |tee govet.log >> $GITHUB_STEP_SUMMARY
-      - name: golint
-        if: always()
-        run: |
-            sudo apt-get update && \
-            DEBIAN_FRONTEND="noninteractive" sudo apt-get update && sudo apt-get install -y golint
-            echo "## Golint" >> $GITHUB_STEP_SUMMARY
-            golint -set_exit_status ./... |tee golint.log >> $GITHUB_STEP_SUMMARY
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59
       - name: go test
         if: always()
         run: |
-          echo "Go test" >> $GITHUB_STEP_SUMMARY
+          echo "## Go test" >> $GITHUB_STEP_SUMMARY
           go test ./... |tee gotest.log >> $GITHUB_STEP_SUMMARY
       - name: Run example 1
         if: always()
@@ -73,6 +70,5 @@ jobs:
         with:
           name: Logs-${{ matrix.golang-ver }}
           path: |
-            golint.log
             govet.log
             gotest.log
