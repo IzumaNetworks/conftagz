@@ -49,6 +49,21 @@ jobs:
         run: |
           echo "Go test" >> $GITHUB_STEP_SUMMARY
           go test ./... |tee gotest.log >> $GITHUB_STEP_SUMMARY
+      - name: Run example 1
+        run: |
+          cd examples/example
+          go build .
+          ./example
+      - name: Run example 2
+        run: |
+            cd examples/example2
+            go build .
+            ./example2
+      - name: Run cobra example
+        run: |
+          cd examples/examplecobra
+          go build .
+          ./examplecobra
       - name: Archive logs
         if: always()
         uses: actions/upload-artifact@v4
