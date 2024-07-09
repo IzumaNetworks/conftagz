@@ -43,23 +43,26 @@ jobs:
             sudo apt-get update && \
             DEBIAN_FRONTEND="noninteractive" sudo apt-get update && sudo apt-get install -y golint
             echo "## Golint" >> $GITHUB_STEP_SUMMARY
-            golint  ./... |tee golint.log >> $GITHUB_STEP_SUMMARY
+            golint -set_exit_status ./... |tee golint.log >> $GITHUB_STEP_SUMMARY
       - name: go test
         if: always()
         run: |
           echo "Go test" >> $GITHUB_STEP_SUMMARY
           go test ./... |tee gotest.log >> $GITHUB_STEP_SUMMARY
       - name: Run example 1
+        if: always()
         run: |
           cd examples/example
           go build .
           ./example
       - name: Run example 2
+        if: always()
         run: |
             cd examples/example2
             go build .
             ./example2
       - name: Run cobra example
+        if: always()
         run: |
           cd examples/examplecobra
           go build .
