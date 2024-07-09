@@ -72,9 +72,9 @@ func main() {
 
 	conftagz.RegisterDefaultFunc("defaultLogSetup", defaultLogSetupFunc)
 
-	var anotherstuct AnotherStruct
+	var anotherstruct AnotherStruct
 
-	conftagz.PreProcessFlagsWithFlagSet(&anotherstuct, flagset)
+	conftagz.PreProcessFlagsWithFlagSet(&anotherstruct, flagset)
 
 	// Run conftagz on the config struct
 	// to validate the config, sub any env vars, and put in defaults for missing items
@@ -97,7 +97,7 @@ func main() {
 		FlagTagOpts: &conftagz.FlagFieldSubstOpts{
 			UseFlags: flagset,
 		},
-	}, &anotherstuct)
+	}, &anotherstruct)
 
 	if err2 != nil {
 		log.Fatalf("AnotherStruct is bad: %v\n", err2)
@@ -109,8 +109,8 @@ func main() {
 		fmt.Printf("someotherflag is set\n")
 	}
 
-	if anotherstuct.AnotherField != "" {
-		fmt.Printf("AnotherField: %v\n", anotherstuct.AnotherField)
+	if anotherstruct.AnotherField != "" {
+		fmt.Printf("AnotherField: %v\n", anotherstruct.AnotherField)
 	}
 
 	fmt.Printf("Config: %+v\n", config)
