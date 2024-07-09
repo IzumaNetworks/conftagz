@@ -23,6 +23,9 @@ func TestDefaultFields(t *testing.T) {
 
 	assert.Equal(t, "Value1", mystruct.Field1)
 	assert.Equal(t, "Banana", mystruct.Field2)
+	assert.Equal(t, 33, mystruct.Field3)
+	assert.Equal(t, uint(33), mystruct.Field3a)
+	assert.Equal(t, uint64(33), mystruct.Field3b)
 	assert.Equal(t, mystruct.Field3, 33)
 }
 
