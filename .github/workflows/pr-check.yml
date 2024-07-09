@@ -1,4 +1,4 @@
-name: PR-checks
+name: Conftagz PR-checks
 on: 
     # Allow triggering the workflow via the GitHub UI
     workflow_dispatch:
@@ -10,15 +10,15 @@ on:
 
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
-  group: flowmata-'${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  group: conftagz-'${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
   cancel-in-progress: true
 
 jobs:
   pr-checks:
     strategy:
       matrix:
-        golang-ver: ["1.22"]
-    runs-on: ubuntu-latest
+        golang-ver: ["1.21", "1.22"]
+    runs-on: ["self-hosted", "client"]
     steps:
       - name: Check out code
         uses: actions/checkout@v4
