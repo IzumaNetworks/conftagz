@@ -1,0 +1,47 @@
+name: Build and Test
+on:
+    # Allow triggering the workflow via the GitHub UI
+    workflow_dispatch:
+
+    # Don't run if only the .md -file is changed
+    push:
+        paths-ignore:
+            - '**/*.md'
+    schedule:
+        # Once week 05:05 on Saturday
+        - cron: '05 5 * * Sat'
+
+# This allows a subsequently queued workflow run to interrupt previous runs
+concurrency:
+  group: conftagz-build-test-'${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        golang-ver: ["1.21", "1.22"]
+    runs-on: ["self-hosted", "client"]
+    env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Set up golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.golang-ver }}
+      - run: go version
+      - name: go build
+        run: go build ./...
+      - name: go test
+        if: always()
+        run: |
+          echo "## Go test" >> $GITHUB_STEP_SUMMARY
+          go test ./... |tee gotest.log >> $GITHUB_STEP_SUMMARY
+      - name: Post status to Slack testing_builds
+        if: always()
+        uses: act10ns/slack@v2
+        with:
+          status: ${{ job.status }}
+          channel: '#testing_builds'

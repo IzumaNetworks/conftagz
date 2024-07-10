@@ -1,4 +1,4 @@
-name: Conftagz PR-checks
+name: Conftagz Static Checks
 on: 
     # Allow triggering the workflow via the GitHub UI
     workflow_dispatch:
@@ -30,8 +30,6 @@ jobs:
       - run: | 
           sudo apt-get update && \
           DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y golint
-      - name: go build
-        run: go build ./...
       - name: go vet
         if: always()
         run: |
@@ -41,29 +39,6 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.59
-      - name: go test
-        if: always()
-        run: |
-          echo "## Go test" >> $GITHUB_STEP_SUMMARY
-          go test ./... |tee gotest.log >> $GITHUB_STEP_SUMMARY
-      - name: Run example 1
-        if: always()
-        run: |
-          cd examples/example
-          go build .
-          ./example
-      - name: Run example 2
-        if: always()
-        run: |
-            cd examples/example2
-            go build .
-            ./example2
-      - name: Run cobra example
-        if: always()
-        run: |
-          cd examples/examplecobra
-          go build .
-          ./examplecobra
       - name: Archive logs
         if: always()
         uses: actions/upload-artifact@v4
