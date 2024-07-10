@@ -20,6 +20,7 @@ type MyStructCobra struct {
 }
 
 func TestCobraFields(t *testing.T) {
+	ResetGlobals()
 	mystruct := MyStructCobra{"Value1", "", 33, 0, 0, 0, false}
 
 	//	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
@@ -34,24 +35,38 @@ func TestCobraFields(t *testing.T) {
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Running root command %+v\n", args)
-
 		return nil
 	}
 	err := PreProcessCobraFlags(&mystruct, nil)
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Errorf("Unexpected error in PreProcessCobraFlags: %v", err)
 		return
 	}
-	rootCmd.ParseFlags(argz)
-	PostProcessCobraFlags()
-	rootCmd.Execute()
+	err = rootCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in ParseFlagas: %v", err)
+		return
+	}
+	err = PostProcessCobraFlags()
+	if err != nil {
+		t.Errorf("Unexpected error in PostProcessCobraFlags: %v", err)
+		return
+	}
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Errorf("Unexpected error in Execute: %v", err)
+		return
+	}
 
 	assert.Equal(t, "Banana", mystruct.Field1)
 	assert.Equal(t, "Razzles", mystruct.Field2)
 	assert.Equal(t, mystruct.Field3, 88)
+	assert.Equal(t, mystruct.Field3a, uint(0))
+	assert.Equal(t, mystruct.Field3b, uint64(0))
 	assert.Equal(t, true, mystruct.Field4)
 }
 func TestCobraFieldsNoFlagProvided(t *testing.T) {
+	ResetGlobals()
 	mystruct := MyStructCobra{"Value1", "", 33, 0, 0, 0, false}
 
 	argz := []string{"--important", "Banana", "--extremelyimportant", "88", "--field4"}
@@ -65,17 +80,28 @@ func TestCobraFieldsNoFlagProvided(t *testing.T) {
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Running root command %+v\n", args)
-
 		return nil
 	}
 	err := PreProcessCobraFlags(&mystruct, nil)
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Errorf("Unexpected error PreProcessCobraFlags: %v", err)
 		return
 	}
-	rootCmd.ParseFlags(argz)
-	PostProcessCobraFlags()
-	rootCmd.Execute()
+	err = rootCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error ParseFlags(argz): %v", err)
+		return
+	}
+	err = PostProcessCobraFlags()
+	if err != nil {
+		t.Errorf("Unexpected error PostProcessCobraFlags(): %v", err)
+		return
+	}
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Errorf("Unexpected error in Execute(): %v", err)
+		return
+	}
 
 	assert.Equal(t, "Banana", mystruct.Field1)
 	assert.Equal(t, "", mystruct.Field2)
@@ -95,6 +121,7 @@ type MyStructCobra2 struct {
 }
 
 func TestCobraFieldsPersistent(t *testing.T) {
+	ResetGlobals()
 	mystruct := MyStructCobra2{"Value1", "", false, 33, 0, 0, 0, false}
 
 	argz := []string{"secondcmd", "-v", "--extremelyimportant", "88", "--field4"}
@@ -128,18 +155,34 @@ func TestCobraFieldsPersistent(t *testing.T) {
 	}
 	rootCmd.AddCommand(secondCmd)
 	rootCmd.SetArgs(argz)
-	rootCmd.ParseFlags(argz)
+	err = rootCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in ParseFlags(argz = %v): %v", argz, err)
+		return
+	}
 	secondCmd.SetArgs(argz)
-	secondCmd.ParseFlags(argz)
-
+	err = secondCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in ParseFlags: %v", err)
+		return
+	}
 	//	secondCmd.ParseFlags(argz)
-	PostProcessCobraFlags()
-	rootCmd.Execute()
-
-	//	assert.Equal(t, "Banana", mystruct.Field1)
+	err = PostProcessCobraFlags()
+	if err != nil {
+		t.Errorf("Unexpected error in PostProcessCobraFlags: %v", err)
+		return
+	}
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Errorf("Unexpected error in Execute: %v", err)
+		return
+	}
+	assert.Equal(t, "Value1", mystruct.Field1)
 	assert.Equal(t, true, mystruct.Verbose)
 	assert.Equal(t, "", mystruct.Field2)
 	assert.Equal(t, mystruct.Field3, 88)
+	assert.Equal(t, mystruct.Field3a, uint(0))
+	assert.Equal(t, mystruct.Field3b, uint64(0))
 	assert.Equal(t, true, mystruct.Field4)
 }
 
@@ -149,6 +192,7 @@ type MyStructWithPrivateAndTagCobra struct {
 }
 
 func TestCobraFieldWithPrivateFieldTagShouldFail(t *testing.T) {
+	ResetGlobals()
 
 	mystruct := MyStructWithPrivateAndTagCobra{"Value1", 0}
 	argz := []string{"--important", "Banana", "--veryimportant", "Razzles", "--extremelyimportant", "88"}
@@ -164,9 +208,16 @@ func TestCobraFieldWithPrivateFieldTagShouldFail(t *testing.T) {
 		t.Errorf("Should have had error.")
 	}
 	rootCmd.ParseFlags(argz)
-	PostProcessCobraFlags()
-	rootCmd.Execute()
-
+	err = PostProcessCobraFlags()
+	if err != nil {
+		t.Errorf("Unexpected error in PostProcessCobraFlags: %v", err)
+		return
+	}
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Errorf("Unexpected error in Execute: %v", err)
+		return
+	}
 	// assert.Equal(t, 0, len(result))
 }
 
@@ -241,10 +292,21 @@ func TestCobrasFieldsWithStruct(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	rootCmd.ParseFlags(argz)
-	PostProcessCobraFlags()
-	rootCmd.Execute()
-
+	err = rootCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in ParseFlags: %v", err)
+		return
+	}
+	err = PostProcessCobraFlags()
+	if err != nil {
+		t.Errorf("Unexpected error in PostProcessCobraFlags: %v", err)
+		return
+	}
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Errorf("Unexpected error in Execute: %v", err)
+		return
+	}
 	// if !reflect.DeepEqual(result, expected) {
 	// 	t.Errorf("Expected %v, but got %v", expected, result)
 	// }
