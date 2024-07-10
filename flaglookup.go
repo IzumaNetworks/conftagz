@@ -3,6 +3,7 @@ package conftagz
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"reflect"
 	"strconv"
@@ -511,7 +512,7 @@ func ProcessFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret *Pro
 						if len(tag) > 0 {
 							existing, ok := ret.needflags[tag] // check if we already have a retriever for this flag
 							if ok {
-								setflagValPtr(parentpath, field.Name, fieldValue, tag, usagetag, existing)
+								_, err = setflagValPtr(parentpath, field.Name, fieldValue, tag, usagetag, existing)
 								if err != nil {
 									return
 								}
@@ -614,7 +615,11 @@ func ProcessFlags(somestruct interface{}, opts *FlagFieldSubstOpts) (err error) 
 			if argz == nil || len(argz) < 1 {
 				argz = os.Args[1:]
 			}
-			opts.UseFlags.Parse(argz)
+			err = opts.UseFlags.Parse(argz)
+			if err != nil {
+				log.Printf("Error parsing flags: %v\n", err)
+				return
+			}
 		}
 	}
 	// err = FinalizeFlags(processed)
@@ -651,7 +656,11 @@ func ProcessFlagsWithFlagSet(somestruct interface{}, set *flag.FlagSet, argz []s
 	// if err != nil {
 	// 	return
 	// }
-	set.Parse(argz)
+	err = set.Parse(argz)
+	if err != nil {
+		log.Printf("Error parsing flags: %v\n", err)
+		return
+	}
 	// err = FinalizeFlags(processed)
 	// if err != nil {
 	// 	return
