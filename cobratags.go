@@ -52,7 +52,7 @@ type ProcessedCobraTags struct {
 
 func (p *ProcessedCobraTags) GetFlagsFound() (ret []string) {
 	ret = make([]string, 0)
-	for k, _ := range p.needflags {
+	for k := range p.needflags {
 		ret = append(ret, k)
 	}
 	return

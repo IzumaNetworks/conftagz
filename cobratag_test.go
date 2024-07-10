@@ -207,7 +207,11 @@ func TestCobraFieldWithPrivateFieldTagShouldFail(t *testing.T) {
 	} else {
 		t.Errorf("Should have had error.")
 	}
-	rootCmd.ParseFlags(argz)
+	err = rootCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in ParseFlags %v: %v", argz, err)
+		return
+	}
 	err = PostProcessCobraFlags()
 	if err != nil {
 		t.Errorf("Unexpected error in PostProcessCobraFlags: %v", err)
