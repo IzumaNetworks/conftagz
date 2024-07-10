@@ -42,7 +42,8 @@ type AnotherStruct struct {
 	AnotherField string `env:"ANOTHERFIELD" flag:"anotherfield"`
 }
 
-func main() {
+// Make the app testable this way
+func RunMain() {
 	var config Config
 
 	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
@@ -117,4 +118,8 @@ func main() {
 	fmt.Printf("Logsetup: %+v\n", config.LogSetup)
 	fmt.Printf("SSL: %+v\n", config.SSL)
 
+}
+
+func main() {
+	RunMain()
 }

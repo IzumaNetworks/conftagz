@@ -51,7 +51,7 @@ type AnotherStruct struct {
 	AnotherField string `env:"ANOTHERFIELD" cflag:"anotherfield" cobra:"othercmd"`
 }
 
-func main() {
+func RunMain() {
 	var config Config
 
 	var anotherstuct AnotherStruct
@@ -169,4 +169,10 @@ func main() {
 	fmt.Printf("AnotherField: %s\n", anotherstuct.AnotherField)
 
 	rootCmd.Execute()
+}
+
+// RunMain is the main entry point for the application
+// We make this app testable this way
+func main() {
+	RunMain()
 }
