@@ -36,6 +36,7 @@ jobs:
           echo "## go vet" >> $GITHUB_STEP_SUMMARY
           go vet -set_exit_status ./... |tee govet.log >> $GITHUB_STEP_SUMMARY
       - name: golangci-lint
+        if: always()
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.59
