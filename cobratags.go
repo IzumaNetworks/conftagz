@@ -34,7 +34,6 @@ type cobraFlagSetRetriever struct {
 	retrievers []cobraFlagRetrieverFunc
 	//val        interface{}
 
-	touched bool
 	// unfortunately spf13/pflag does not implement the flag.Func() functions since it's like almost
 	// never updated, so we resort to just using its function which return pointers to vars if the flag is seen
 	varstr  string
