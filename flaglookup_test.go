@@ -64,7 +64,9 @@ func TestFlagFieldWithPrivateFieldTagShouldFail(t *testing.T) {
 
 	err := ProcessFlagsWithFlagSet(&mystruct, flagset, argz)
 	if err != nil {
-		t.Errorf("Expected no error, but got %v", err)
+		t.Logf("Expected error. Got %v", err)
+	} else {
+		t.Errorf("Expected error, but got nil")
 	}
 	// assert.Equal(t, 0, len(result))
 }

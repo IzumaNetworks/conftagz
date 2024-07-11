@@ -124,7 +124,7 @@ func TestCobraFieldsPersistent(t *testing.T) {
 	ResetGlobals()
 	mystruct := MyStructCobra2{"Value1", "", false, 33, 0, 0, 0, false}
 
-	argz := []string{"secondcmd", "-v", "--extremelyimportant", "88", "--field4"}
+	argz := []string{"-v", "--field4"}
 
 	var rootCmd = &cobra.Command{
 		Use:   "app",
@@ -160,6 +160,7 @@ func TestCobraFieldsPersistent(t *testing.T) {
 		t.Errorf("Unexpected error in ParseFlags(argz = %v): %v", argz, err)
 		return
 	}
+	argz = []string{"secondcmd", "-v", "--extremelyimportant", "88", "--field4"}
 	secondCmd.SetArgs(argz)
 	err = secondCmd.ParseFlags(argz)
 	if err != nil {
@@ -187,20 +188,21 @@ func TestCobraFieldsPersistent(t *testing.T) {
 }
 
 type MyStructWithPrivateAndTagCobra struct {
-	Field1       string `yaml:"important" env:"Important" default:"Apple"`
-	privateField int    `env:"WONTWORK" default:"123" test:">=1024" cobra:"root" cflag:"important"`
+	Field1       string `yaml:"important" env:"Important" default:"Apple" cflag:"important2" cobra:"root"`
+	privateField int    `env:"WONTWORK" default:"123" test:">=1024" cobra:"root" cflag:"wontwork"`
 }
 
 func TestCobraFieldWithPrivateFieldTagShouldFail(t *testing.T) {
 	ResetGlobals()
 
 	mystruct := MyStructWithPrivateAndTagCobra{"Value1", 0}
-	argz := []string{"--important", "Banana", "--veryimportant", "Razzles", "--extremelyimportant", "88"}
+	argz := []string{"--important2", "Banana"} //, "--veryimportant", "Razzles", "--extremelyimportant", "88"}
 
 	var rootCmd = &cobra.Command{
 		Use:   "app",
 		Short: "A simple CLI application",
 	}
+	RegisterCobraCmd("root", rootCmd)
 	err := PreProcessCobraFlags(&mystruct, nil)
 	if err != nil {
 		t.Logf("Expected error: %v", err)
