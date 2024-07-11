@@ -56,7 +56,7 @@ func skipIfZero(confops map[string]string) bool {
 }
 
 // true if the env var must exist, returns an error if it does not
-func mustEnv(confops map[string]string) bool {
+func mustEnv(confops map[string]string) bool { // nolint:golint,unused
 	if _, ok := confops["mustenv"]; ok {
 		return true
 	}
@@ -89,7 +89,7 @@ func testSkip(confops map[string]string) bool {
 
 // true if the envvar should always replace a value
 // if the env var exists
-func preferEnv(confops map[string]string) bool {
+func preferEnv(confops map[string]string) bool { // nolint:golint,unused
 	if _, ok := confops["preferenv"]; ok {
 		return true
 	}
@@ -97,7 +97,7 @@ func preferEnv(confops map[string]string) bool {
 }
 
 // if true then env var is only used if the field has the zero value
-func backupEnv(confops map[string]string) bool {
+func backupEnv(confops map[string]string) bool { // nolint:golint,unused
 	if _, ok := confops["backupenv"]; ok {
 		return true
 	}
@@ -106,7 +106,7 @@ func backupEnv(confops map[string]string) bool {
 
 // if true, then this test will only warn and never
 // cause an error to return
-func testWarn(confops map[string]string) bool {
+func testWarn(confops map[string]string) bool { // nolint:golint,unused
 	if _, ok := confops["testwarn"]; ok {
 		return true
 	}
