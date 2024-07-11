@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/:license-apache-blue.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/go.izuma.io/conftagz)](https://goreportcard.com/report/go.izuma.io/IzumaNetworks/conftagz)
+[![Build and Test](https://github.com/IzumaNetworks/conftagz/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/IzumaNetworks/conftagz/actions/workflows/build-and-test.yml)
 
 ```
 go get go.izuma.io/conftagz
