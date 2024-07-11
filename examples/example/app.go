@@ -22,7 +22,7 @@ func ValidTimeDuration(val interface{}, fieldname string) bool {
 	return err == nil
 }
 
-func main() {
+func RunMain() {
 
 	var config Config
 
@@ -54,4 +54,8 @@ func main() {
 
 	fmt.Printf("Config: %v\n", config)
 
+}
+
+func main() {
+	RunMain()
 }

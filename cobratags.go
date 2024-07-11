@@ -52,7 +52,7 @@ type ProcessedCobraTags struct {
 
 func (p *ProcessedCobraTags) GetFlagsFound() (ret []string) {
 	ret = make([]string, 0)
-	for k, _ := range p.needflags {
+	for k := range p.needflags {
 		ret = append(ret, k)
 	}
 	return
@@ -556,7 +556,7 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 						if len(tag) > 0 {
 							existing, ok := ret.needflags[tag] // check if we already have a retriever for this flag
 							if ok {
-								setflagValPtr(parentpath, field.Name, fieldValue, tag, stag, usagetag, existing, pflags)
+								_, err = setflagValPtr(parentpath, field.Name, fieldValue, tag, stag, usagetag, existing, pflags)
 								if err != nil {
 									return
 								}

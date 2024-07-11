@@ -1,4 +1,4 @@
-name: PR-checks
+name: Conftagz Static Checks
 on: 
     # Allow triggering the workflow via the GitHub UI
     workflow_dispatch:
@@ -10,15 +10,15 @@ on:
 
 # This allows a subsequently queued workflow run to interrupt previous runs
 concurrency:
-  group: flowmata-'${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  group: conftagz-'${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
   cancel-in-progress: true
 
 jobs:
   pr-checks:
     strategy:
       matrix:
-        golang-ver: ["1.22"]
-    runs-on: ubuntu-latest
+        golang-ver: ["1.21", "1.22"]
+    runs-on: ["self-hosted", "client"]
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -30,23 +30,21 @@ jobs:
       - run: | 
           sudo apt-get update && \
           DEBIAN_FRONTEND="noninteractive" sudo apt-get install -y golint
-      - name: go build
-        run: go build ./...
       - name: go vet
         if: always()
-        run: go vet ./...
-      - name: golint
-        if: always()
         run: |
-            sudo apt-get update && \
-            DEBIAN_FRONTEND="noninteractive" sudo apt-get update && sudo apt-get install -y golint
-            golint ./...
-      - name: go test
+          echo "## go vet" >> $GITHUB_STEP_SUMMARY
+          go vet -set_exit_status ./... |tee govet.log >> $GITHUB_STEP_SUMMARY
+      - name: golangci-lint
         if: always()
-        run: go test ./...
-      - name: Install & run misspell
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59
+      - name: Archive logs
         if: always()
-        run: |
-            go install github.com/golangci/misspell/cmd/misspell@v0.5.1
-            misspell -v
-            misspell -i mosquitto,conftagz .
+        uses: actions/upload-artifact@v4
+        with:
+          name: Logs-${{ matrix.golang-ver }}
+          path: |
+            govet.log
+            gotest.log

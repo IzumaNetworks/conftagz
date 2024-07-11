@@ -51,7 +51,7 @@ type AnotherStruct struct {
 	AnotherField string `env:"ANOTHERFIELD" cflag:"anotherfield" cobra:"othercmd"`
 }
 
-func main() {
+func RunMain() {
 	var config Config
 
 	var anotherstuct AnotherStruct
@@ -140,7 +140,7 @@ func main() {
 
 	// make sure to add all commands before parsing flags
 	rootCmd.AddCommand(otherCmd)
-	// Force cobra to parse the flags before runing conftagz.Process
+	// Force cobra to parse the flags before running conftagz.Process
 	// You will need to parse all the flags for all the commands
 	// which have any conftagz fields
 	rootCmd.ParseFlags(os.Args)
@@ -169,4 +169,10 @@ func main() {
 	fmt.Printf("AnotherField: %s\n", anotherstuct.AnotherField)
 
 	rootCmd.Execute()
+}
+
+// RunMain is the main entry point for the application
+// We make this app testable this way
+func main() {
+	RunMain()
 }

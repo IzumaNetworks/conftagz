@@ -177,11 +177,11 @@ func TestTestSliceOfPointersToStruct(t *testing.T) {
 	slice2 := []InnerStruct{inner1_2}
 	mystruct.SliceField2 = slice2
 
-	testslicefunc_ran := false
+	testslicefuncRan := false
 
 	testslicefunc := func(val interface{}, fieldname string) bool {
 		valslice, ok := val.([]int)
-		testslicefunc_ran = true
+		testslicefuncRan = true
 		if !ok {
 			t.Errorf("Expected slice, but got %v", val)
 			return false
@@ -211,7 +211,7 @@ func TestTestSliceOfPointersToStruct(t *testing.T) {
 	assert.Equal(t, mystruct.Field1, "APPPPLE")
 	assert.Equal(t, mystruct.SliceField[0].FieldInner1, "inner1")
 	assert.Equal(t, mystruct.SliceField[1].FieldInner1, "inner2")
-	assert.True(t, testslicefunc_ran)
+	assert.True(t, testslicefuncRan)
 
 }
 

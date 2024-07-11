@@ -34,7 +34,11 @@ func TestProcessSelfParseFlags(t *testing.T) {
 		return
 	}
 	flagtagopts.Tags = processed
-	flagset.Parse(argz)
+	err = flagset.Parse(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in Parse %v: %v", argz, err)
+		return
+	}
 
 	// expected := []string{"Field2"}
 
@@ -72,7 +76,11 @@ func TestProcessSelfParseFlags2(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 		return
 	}
-	flagset.Parse(argz)
+	err = flagset.Parse(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in Parse %v: %v", argz, err)
+		return
+	}
 	flagtagopts.Tags = processed
 	// expected := []string{"Field2"}
 
@@ -136,7 +144,11 @@ func TestProcessCobraTags(t *testing.T) {
 		return
 	}
 
-	rootCmd.Execute()
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Errorf("Unexpected error in Execute: %v", err)
+		return
+	}
 	// if !reflect.DeepEqual(result, expected) {
 	// 	t.Errorf("Expected %v, but got %v", expected, result)
 	// }

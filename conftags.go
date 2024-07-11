@@ -1,5 +1,6 @@
 package conftagz
 
+// Constants to define flag tag types
 const (
 	_ int = iota
 	FLAGTAGS
@@ -33,8 +34,10 @@ func switchOrderOfOpsToCobra() []int {
 	return oo
 }
 
+// CONFFIELD is the default configuration field name
 const CONFFIELD = "conf"
 
+// ConfTagOpts is a struct that holds the options for processing the tags
 type ConfTagOpts struct {
 	OrderOfOps   []int
 	EnvOpts      *EnvFieldSubstOpts
@@ -44,6 +47,7 @@ type ConfTagOpts struct {
 	CobraTagOpts *CobraFieldSubstOpts
 }
 
+// Process takes a struct and processes the tags in the struct
 func Process(opts *ConfTagOpts, somestruct interface{}) (err error) {
 	if opts == nil {
 		opts = &ConfTagOpts{}
