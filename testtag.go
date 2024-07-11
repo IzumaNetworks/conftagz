@@ -457,9 +457,10 @@ func parseTestVal(tagval string) (ret *testConfOp, err error) {
 			if ret == nil {
 				ret = &testConfOp{}
 			}
-			if op != nil {
-				ret.ops = append(ret.ops, op)
-			}
+			// op is guaranteed to be non-nil at this stage
+			// testtag.go:460:7: SA4031: this nil check is always true (staticcheck)
+			// if op != nil {
+			ret.ops = append(ret.ops, op)
 		}
 	}
 	return
