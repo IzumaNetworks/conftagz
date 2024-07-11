@@ -120,6 +120,18 @@ type MyStructCobra2 struct {
 	Field4       bool `env:"Field4" cflag:"field4" cobra:"root,persistent"`
 }
 
+func TestNilPreProcess(t *testing.T) {
+	ResetGlobals()
+	var mystruct *MyStructCobra2 = nil
+	err := PreProcessCobraFlags(mystruct, nil)
+	if err != nil {
+		t.Logf("Expected error: %v", err)
+	} else {
+		t.Logf("Should have had error.")
+		t.Fail()
+	}
+
+}
 func TestCobraFieldsPersistent(t *testing.T) {
 	ResetGlobals()
 	mystruct := MyStructCobra2{"Value1", "", false, 33, 0, 0, 0, false}
