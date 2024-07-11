@@ -1,8 +1,8 @@
-webhook_url: https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX
+webhook_url: https://hooks.example.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX
 port: 8080
 sslstuff:
-  cert: adasdaskdalksdhajksdhajksdhaksjd
-  key: asdklasjdkajsdklasjdlkasjdklajsd
+  cert: DummyPublicCertificateDataJustanexample_not_leaking_any_secrets
+  key: DummyPrivateCertificateDataJustanexample_not_leaking_any_secrets
 servers:
   - name: server1
     ip: 192.168.1.1

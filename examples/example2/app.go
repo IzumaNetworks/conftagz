@@ -45,22 +45,22 @@ type AnotherStruct struct {
 // Make the app testable this way
 func RunMain() {
 	var config Config
+	var confFileName string = "config.yaml"
 
 	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
-	someotherflag := flagset.Bool("someotherflag", false, "Test if a flag not in confg struct is fine")
+	someotherflag := flagset.Bool("someotherflag", false, "Test if a flag not in config struct is fine")
 	// load config file from yaml using yaml parser
 	// Read the yaml file
-	data, err := os.ReadFile("config.yaml")
+	data, err := os.ReadFile(confFileName)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		log.Fatalf("error with os.ReadFile(%s): %v", confFileName, err)
 	}
 
 	// Unmarshal the yaml file into the config struct
 	err = yaml.Unmarshal([]byte(data), &config)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		log.Fatalf("error with Unmarshal: %v", err)
 	}
-
 	defaultLogSetupFunc := func(fieldname string) interface{} {
 		return &LogSetup{
 			DebugPrefix:   "DEBUG",
@@ -75,33 +75,36 @@ func RunMain() {
 
 	var anotherstruct AnotherStruct
 
-	conftagz.PreProcessFlagsWithFlagSet(&anotherstruct, flagset)
+	err = conftagz.PreProcessFlagsWithFlagSet(&anotherstruct, flagset)
+	if err != nil {
+		log.Fatalf("error with PreProcessFlagsWithFlagSet: %v\n", err)
+	}
 
 	// Run conftagz on the config struct
 	// to validate the config, sub any env vars, and put in defaults for missing items
-	// pass in the optionn to use our own flag set
-	err2 := conftagz.Process(&conftagz.ConfTagOpts{
+	// pass in the option to use our own flag set
+	err = conftagz.Process(&conftagz.ConfTagOpts{
 		FlagTagOpts: &conftagz.FlagFieldSubstOpts{
 			UseFlags: flagset,
 		},
 	}, &config)
 
-	if err2 != nil {
-		log.Fatalf("Config is bad: %v\n", err2)
+	if err != nil {
+		log.Fatalf("Config is bad: %v\n", err)
 	} else {
 		fmt.Printf("Config good.\n")
 	}
 
 	// You can call conftagz on multiple structs also
 	// and with the same flag options if needed
-	err2 = conftagz.Process(&conftagz.ConfTagOpts{
+	err = conftagz.Process(&conftagz.ConfTagOpts{
 		FlagTagOpts: &conftagz.FlagFieldSubstOpts{
 			UseFlags: flagset,
 		},
 	}, &anotherstruct)
 
-	if err2 != nil {
-		log.Fatalf("AnotherStruct is bad: %v\n", err2)
+	if err != nil {
+		log.Fatalf("AnotherStruct is bad: %v\n", err)
 	} else {
 		fmt.Printf("AnotherStruct good.\n")
 	}
@@ -117,7 +120,6 @@ func RunMain() {
 	fmt.Printf("Config: %+v\n", config)
 	fmt.Printf("Logsetup: %+v\n", config.LogSetup)
 	fmt.Printf("SSL: %+v\n", config.SSL)
-
 }
 
 func main() {

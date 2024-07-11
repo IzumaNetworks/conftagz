@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestAppExecution(t *testing.T) {
+func TestExampleAppExecution(t *testing.T) {
 	RunMain()
 	t.Log("Example ran successfully")
 }
