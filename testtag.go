@@ -465,7 +465,7 @@ func parseTestVal(tagval string) (ret *testConfOp, err error) {
 	return
 }
 
-// RUns through all test:"" tags to see if the current value passes the test
+// Runs through all test:"" tags to see if the current value passes the test
 func RunTestFlags(somestruct interface{}, opts *TestFieldSubstOpts) (ret []string, err error) {
 
 	var innerTest func(parentpath string, somestruct interface{}) (err error)
