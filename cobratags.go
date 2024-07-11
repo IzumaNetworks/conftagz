@@ -609,6 +609,9 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 	}
 
 	valuePtr := reflect.ValueOf(somestruct)
+	if valuePtr.IsZero() {
+		return nil, fmt.Errorf("struct ptr is nil")
+	}
 
 	if valuePtr.Kind() != reflect.Ptr {
 		return nil, fmt.Errorf("not a pointer to a struct")
