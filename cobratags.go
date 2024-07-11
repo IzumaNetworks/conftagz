@@ -584,7 +584,7 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 				if len(tag) > 0 {
 					existing, ok := ret.needflags[tag] // check if we already have a retriever for this flag
 					if ok {
-						setFlagVal(parentpath, field.Name, fieldValue, tag, stag, usagetag, existing, pflags)
+						_, err = setFlagVal(parentpath, field.Name, fieldValue, tag, stag, usagetag, existing, pflags)
 						if err != nil {
 							return
 						}
