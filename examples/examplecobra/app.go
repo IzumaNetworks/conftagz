@@ -102,15 +102,16 @@ func RunMain() {
 
 	// load config file from yaml using yaml parser
 	// Read the yaml file
-	data, err := os.ReadFile("config.yaml")
+	var confFileName string = "config.yaml"
+	data, err := os.ReadFile(confFileName)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		log.Fatalf("error with os.Readfile(%s): %v", confFileName, err)
 	}
 
 	// Unmarshal the yaml file into the config struct
 	err = yaml.Unmarshal([]byte(data), &config)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		log.Fatalf("error with Unmarshal: %v", err)
 	}
 
 	defaultLogSetupFunc := func(fieldname string) interface{} {
@@ -143,32 +144,41 @@ func RunMain() {
 	// Force cobra to parse the flags before running conftagz.Process
 	// You will need to parse all the flags for all the commands
 	// which have any conftagz fields
-	rootCmd.ParseFlags(os.Args)
-	otherCmd.ParseFlags(os.Args)
+	err = rootCmd.ParseFlags(os.Args)
+	if err != nil {
+		log.Fatalf("Unexpected error on rootCmd.ParseFlags: %v", err)
+	}
+	err = otherCmd.ParseFlags(os.Args)
+	if err != nil {
+		log.Fatalf("Unexpected error on otherCmd.ParseFlags: %v", err)
+	}
 
 	// Run conftagz on the config struct
 	// to validate the config, sub any env vars, and put in defaults for missing items
 	// pass in the optionn to use our own flag set
 	// In the case of cobra tags - in options in os.Args will now be filled into the struct
-	err2 := conftagz.Process(nil, &config)
+	err = conftagz.Process(nil, &config)
 
-	if err2 != nil {
-		log.Fatalf("Config is bad: %v\n", err2)
+	if err != nil {
+		log.Fatalf("Config is bad: %v\n", err)
 	} else {
 		fmt.Printf("Config good.\n")
 	}
 
 	// You can call conftagz on multiple structs
-	err2 = conftagz.Process(nil, &anotherstuct)
-	if err2 != nil {
-		log.Fatalf("AnotherStruct is bad: %v\n", err2)
+	err = conftagz.Process(nil, &anotherstuct)
+	if err != nil {
+		log.Fatalf("AnotherStruct is bad: %v\n", err)
 	} else {
 		fmt.Printf("AnotherStruct good.\n")
 	}
 
 	fmt.Printf("AnotherField: %s\n", anotherstuct.AnotherField)
 
-	rootCmd.Execute()
+	err = rootCmd.Execute()
+	if err != nil {
+		log.Fatalf("Unexpected error on rootCmd.Execute: %v", err)
+	}
 }
 
 // RunMain is the main entry point for the application

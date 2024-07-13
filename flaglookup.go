@@ -89,7 +89,7 @@ type ProcessedFlagTags struct {
 
 func (p *ProcessedFlagTags) GetFlagsFound() (ret []string) {
 	ret = make([]string, 0)
-	for k, _ := range p.needflags {
+	for k := range p.needflags {
 		ret = append(ret, k)
 	}
 	return
@@ -540,7 +540,7 @@ func ProcessFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret *Pro
 				if len(tag) > 0 {
 					existing, ok := ret.needflags[tag] // check if we already have a retriever for this flag
 					if ok {
-						setFlagVal(parentpath, field.Name, fieldValue, tag, usagetag, existing)
+						_, err = setFlagVal(parentpath, field.Name, fieldValue, tag, usagetag, existing)
 						if err != nil {
 							return
 						}

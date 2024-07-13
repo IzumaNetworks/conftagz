@@ -457,15 +457,16 @@ func parseTestVal(tagval string) (ret *testConfOp, err error) {
 			if ret == nil {
 				ret = &testConfOp{}
 			}
-			if op != nil {
-				ret.ops = append(ret.ops, op)
-			}
+			// op is guaranteed to be non-nil at this stage
+			// testtag.go:460:7: SA4031: this nil check is always true (staticcheck)
+			// if op != nil {
+			ret.ops = append(ret.ops, op)
 		}
 	}
 	return
 }
 
-// RUns through all test:"" tags to see if the current value passes the test
+// Runs through all test:"" tags to see if the current value passes the test
 func RunTestFlags(somestruct interface{}, opts *TestFieldSubstOpts) (ret []string, err error) {
 
 	var innerTest func(parentpath string, somestruct interface{}) (err error)

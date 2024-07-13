@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/:license-apache-blue.svg)](LICENSE)
 [![Go Report Card](https://goreportcard.com/badge/go.izuma.io/conftagz)](https://goreportcard.com/report/go.izuma.io/IzumaNetworks/conftagz)
+[![Build and Test](https://github.com/IzumaNetworks/conftagz/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/IzumaNetworks/conftagz/actions/workflows/build-and-test.yml)
 
 ```
 go get go.izuma.io/conftagz
@@ -56,10 +57,10 @@ func main() {
 	// Run conftagz on the config struct
 	// to validate the config, sub any env vars,
 	// and put in defaults for missing items
-	err2 := conftagz.Process(nil, &config)
-	if err2 != nil {
+	err = conftagz.Process(nil, &config)
+	if err != nil {
 		// some test tag failed
-		log.Fatalf("Config is bad: %v\n", err2)
+		log.Fatalf("Config is bad: %v\n", err)
 	} else {
 		fmt.Printf("Config good.\n")
 	}
@@ -104,7 +105,7 @@ Config: {https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXX
 
 There are many powerful and complicated libraries for configuration options and flags. [cobra](https://github.com/spf13/cobra), [viper](https://github.com/spf13/viper), [kong](https://github.com/alecthomas/kong), etc. But frankly software is already complex enough - and the last thing I wanted is some complicated library to just process command line arguments and config files. `conftagz` is the antithesis of these approaches.
 
-When I go back to look at something from months ago - I want it to be super easy to figure out what's going on with the conf files and flags... Nor do I want to be confined to a specific way to layout components, or have to call dozens of library functions just to get the CLI options.
+When I go back to look at something from months ago - I want it to be super easy to figure out what is going on with the conf files and flags. Nor do I want to be confined to a specific way to layout components, or have to call dozens of library functions just to get the CLI options.
 
 ### Just use struct tags
 
@@ -123,11 +124,11 @@ You can do all this with just struct tags using this package. Then make one call
 
 `conftagz` attempts to eleminate code writing for as much of this as possible by offering:
 
-A `flag:` and (optional) `usage:` tag. This allows setting specific struct fields to be set by a command line flag. Uses the standrd `flag` package.
+A `flag:` and (optional) `usage:` tag. This allows setting specific struct fields to be set by a command line flag. Uses the standard `flag` package.
 
 A `cflag:` `usage:` and `cobra:` flag allow you to use [cobra](https://github.com/spf13/cobra) instead of the normal stdlib `flags` package. See [Using Cobra for flags](#using-cobra-for-flags) section.
 
-A `env:` struct tag which will replace the value of the field with the contents of the env var if present.
+An `env:` struct tag which will replace the value of the field with the contents of the env var if present.
 
 A `test:` struct tag which provides some basic validation (comparison, regex) or allows the calling of a custom func to check a value.
 
@@ -141,7 +142,7 @@ All tags are optional. Fields with no tag above are just ignored.
 
 `conftagz` behavior is specifically designed to complement the behavior of the `yaml.v2` parser that almost everyone uses.
 
-Obviously, `conftagz` makes uses of the `reflect` package to do all this.
+`conftagz` makes uses of the `reflect` package to do all this.
 
 ### Type support:
 
@@ -150,12 +151,12 @@ Fundamental types:
 - `bool` (not supported by `default:` tag as unnecessary)
 - `float32` and `float64`
 - `string` ... `conftagz` uses the golang regex std library for regex tests
-- pointers to all the above - `conftagz` will create the item if the pointer is nil _and_ a default or env var are applied.
+- pointers to all the above - `conftagz` will create the item if the pointer is `nil` _and_ a default or env var are applied.
 
 Structs & Slices
 - Supports both and also their pointers
 - Support for slices of structs and slices of pointers to structs 
-- Default structs can be created if the yaml parser left a struct pointer nil by using a custom `DefaultFunc` like `default:"$(mydefaultfunc)"` See _custom defaults_
+- Default structs can be created if the yaml parser left a struct pointer `nil` by using a custom `DefaultFunc` like `default:"$(mydefaultfunc)"` See _custom defaults_
 - `conftagz` will automatically create a new struct if the struct pointer is `nil`. This behavior can be avoided with `conf:"skip"` or `conf:"skipnil"`
 - Nil slices of pointers to structs will be left alone without a custom function
 
@@ -340,10 +341,10 @@ Custom functions allow various arbitrary tests. Because the function signature i
 The easiest way to use conftagz is:
 
 ```go
-	err2 := conftagz.Process(nil, &config)
-	if err2 != nil {
+	err := conftagz.Process(nil, &config)
+	if err != nil {
 		// some test tag failed
-        log.Fatalf("Config is bad: %v\n", err2)
+        log.Fatalf("Config is bad: %v\n", err)
 	} else {
 		fmt.Printf("Config good.\n")
 	}
@@ -412,16 +413,16 @@ rootCmd.ParseFlags(os.Args)
 otherCmd.ParseFlags(os.Args)
 
 // Run conftagz on the structs
-err2 := conftagz.Process(nil, &config)
-err2 = conftagz.Process(nil, &anotherstuct)
+err = conftagz.Process(nil, &config)
+err = conftagz.Process(nil, &anotherstuct)
 
 // your structs should be filled in if flags were used
 ```
 
-See `examples/examplecobra` for a fully working example.
+See [`examples/examplecobra`](examples/examplecobra/app.go) for a fully working example.
 
 ## Examples
 
-More docs to follow. See the `examples` folder for more examples.
+More docs to follow. See the [`examples`](examples) folder for more examples.
 
 Also refer to the test files for more.

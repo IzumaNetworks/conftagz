@@ -35,10 +35,15 @@ jobs:
       - name: go build
         run: go build ./...
       - name: go test
-        if: always()
         run: |
           echo "## Go test" >> $GITHUB_STEP_SUMMARY
-          go test ./... |tee gotest.log >> $GITHUB_STEP_SUMMARY
+          go test -v -cover ./... |tee gotest.log >> $GITHUB_STEP_SUMMARY
+          if grep -q "FAIL" gotest.log; then
+            echo "## Go test failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "## Go test passed" >> $GITHUB_STEP_SUMMARY
+          fi
       - name: Post status to Slack testing_builds
         if: always()
         uses: act10ns/slack@v2

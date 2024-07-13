@@ -25,18 +25,19 @@ func ValidTimeDuration(val interface{}, fieldname string) bool {
 func RunMain() {
 
 	var config Config
+	var confFileName string = "config.yaml"
 
 	// load config file from yaml using yaml parser
 	// Read the yaml file
-	data, err := os.ReadFile("config.yaml")
+	data, err := os.ReadFile(confFileName)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		log.Fatalf("error with ReadFile(%s): %v", confFileName, err)
 	}
 
 	// Unmarshal the yaml file into the config struct
 	err = yaml.Unmarshal([]byte(data), &config)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		log.Fatalf("error with yaml.Unmarshal: %v", err)
 	}
 	// register that custom test
 	conftagz.RegisterTestFunc("validtimeduration", ValidTimeDuration)
@@ -44,16 +45,14 @@ func RunMain() {
 	// Run conftagz on the config struct
 	// to validate the config, sub any env vars,
 	// and put in defaults for missing items
-	err2 := conftagz.Process(nil, &config)
-	if err2 != nil {
+	err = conftagz.Process(nil, &config)
+	if err != nil {
 		// some test tag failed
-		log.Fatalf("Config is bad: %v\n", err2)
+		log.Fatalf("Config is bad: %v\n", err)
 	} else {
 		fmt.Printf("Config good.\n")
 	}
-
 	fmt.Printf("Config: %v\n", config)
-
 }
 
 func main() {

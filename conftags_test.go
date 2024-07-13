@@ -130,17 +130,21 @@ func TestProcessCobraTags(t *testing.T) {
 	}
 	err := PreProcessCobraFlags(mystruct, nil)
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Errorf("Unexpected error with PreProcessCobraFlags: %v", err)
 		return
 	}
-	rootCmd.ParseFlags(argz)
+	err = rootCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error with rootCmd.ParseFlags: %v", err)
+		return
+	}
 	//	PostProcessCobraFlags()
 
 	err = Process(&ConfTagOpts{
 		//	FlagTagOpts: flagtagopts,
 	}, mystruct)
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Errorf("Unexpected error w Process: %v", err)
 		return
 	}
 
