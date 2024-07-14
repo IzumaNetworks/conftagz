@@ -51,10 +51,15 @@ type AnotherStruct struct {
 	AnotherField string `env:"ANOTHERFIELD" cflag:"anotherfield" cobra:"othercmd"`
 }
 
+type OneMoreStruct struct {
+	OneMoreField string `env:"ONEMOREFIELD" cflag:"onemorefield" cobra:"othercmd2"`
+}
+
 func RunMain() {
 	var config Config
 
 	var anotherstuct AnotherStruct
+	var onemore OneMoreStruct
 
 	var rootCmd = &cobra.Command{
 		Use:   "app",
@@ -91,6 +96,25 @@ func RunMain() {
 	}
 
 	conftagz.RegisterCobraCmd("othercmd", otherCmd)
+
+	var oneMoreStructCmd = &cobra.Command{
+		Use:   "onemore",
+		Short: "One more command",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Printf("Running other command %+v\n", args)
+			fmt.Printf("--------------------\n")
+			fmt.Printf("Config: %+v\n", config)
+			fmt.Printf("Logsetup: %+v\n", config.LogSetup)
+			fmt.Printf("SSL: %+v\n", config.SSL)
+			fmt.Printf("AnotherStruct: %+v\n", anotherstuct)
+			fmt.Printf("OneMoreStruct: %+v\n", onemore)
+			fmt.Printf("--------------------\n")
+			fmt.Printf("Verbose: %v\n", config.Verbose)
+			return nil
+		},
+	}
+
+	conftagz.RegisterCobraCmd("othercmd2", oneMoreStructCmd)
 
 	// Root command flags
 	// var boolFlag bool
@@ -138,20 +162,20 @@ func RunMain() {
 	if err != nil {
 		log.Fatalf("Unexpected error on PreProcessCobraFlags(anotherstuct): %v", err)
 	}
+	err = conftagz.PreProcessCobraFlags(&onemore, nil)
+	if err != nil {
+		log.Fatalf("Unexpected error on PreProcessCobraFlags(onemore): %v", err)
+	}
 
 	// make sure to add all commands before parsing flags
 	rootCmd.AddCommand(otherCmd)
+	rootCmd.AddCommand(oneMoreStructCmd)
 	// Force cobra to parse the flags before running conftagz.Process
 	// You will need to parse all the flags for all the commands
 	// which have any conftagz fields
-	err = rootCmd.ParseFlags(os.Args)
-	if err != nil {
-		log.Fatalf("Unexpected error on rootCmd.ParseFlags: %v", err)
-	}
-	err = otherCmd.ParseFlags(os.Args)
-	if err != nil {
-		log.Fatalf("Unexpected error on otherCmd.ParseFlags: %v", err)
-	}
+	rootCmd.ParseFlags(os.Args)
+	otherCmd.ParseFlags(os.Args)
+	oneMoreStructCmd.ParseFlags(os.Args)
 
 	// Run conftagz on the config struct
 	// to validate the config, sub any env vars, and put in defaults for missing items
