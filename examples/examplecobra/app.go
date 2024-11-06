@@ -48,7 +48,7 @@ type Config struct {
 }
 
 type AnotherStruct struct {
-	AnotherField string `env:"ANOTHERFIELD" cflag:"anotherfield" cobra:"othercmd"`
+	AnotherField string `env:"ANOTHERFIELD" cflag:"anotherfield" cobra:"other3,othercmd"`
 }
 
 type OneMoreStruct struct {
@@ -116,6 +116,17 @@ func RunMain() {
 
 	conftagz.RegisterCobraCmd("othercmd2", oneMoreStructCmd)
 
+	var other3Cmd = &cobra.Command{
+		Use:   "other3",
+		Short: "Another command",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Printf("not used\n")
+			return nil
+		},
+	}
+
+	conftagz.RegisterCobraCmd("other3", other3Cmd)
+
 	// Root command flags
 	// var boolFlag bool
 	// var stringFlag string
@@ -170,11 +181,13 @@ func RunMain() {
 	// make sure to add all commands before parsing flags
 	rootCmd.AddCommand(otherCmd)
 	rootCmd.AddCommand(oneMoreStructCmd)
+	rootCmd.AddCommand(other3Cmd)
 	// Force cobra to parse the flags before running conftagz.Process
 	// You will need to parse all the flags for all the commands
 	// which have any conftagz fields
 	rootCmd.ParseFlags(os.Args)
 	otherCmd.ParseFlags(os.Args)
+	other3Cmd.ParseFlags(os.Args)
 	oneMoreStructCmd.ParseFlags(os.Args)
 
 	// Run conftagz on the config struct

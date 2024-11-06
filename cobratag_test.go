@@ -113,7 +113,7 @@ type MyStructCobra2 struct {
 	Field1       string `yaml:"important" env:"Important" default:"Apple" cflag:"important" cobra:"root"`
 	Field2       string `json:"field2" env:"VeryImportant" default:"Banana" test:"~R.*[Ss]{1}$" cflag:"veryimportant" cobra:"root"`
 	Verbose      bool   `env:"VERBOSE" default:"false" cflag:"verbose,v" cobra:"root,persistent"`
-	Field3       int    `env:"ExtremelyImportant" default:"999" test:">=1024" cflag:"extremelyimportant" cobra:"secondcmd"`
+	Field3       int    `env:"ExtremelyImportant" default:"999" test:">=1024" cflag:"extremelyimportant" cobra:"secondcmd,thirdcmd"`
 	Field3a      uint   `env:"ExtremelyImportant" default:"999" test:">=1024" cflag:"extremelyimportant_a" cobra:"secondcmd"`
 	Field3b      uint64 `env:"ExtremelyImportant" default:"999" test:">=1024" cflag:"extremelyimportant_b" cobra:"secondcmd"`
 	privateField int
@@ -148,8 +148,14 @@ func TestCobraFieldsPersistent(t *testing.T) {
 		Short: "A simple CLI second command",
 	}
 
+	var thirdCmd = &cobra.Command{
+		Use:   "thirdcmd",
+		Short: "A simple CLI third command",
+	}
+
 	RegisterCobraCmd("root", rootCmd)
 	RegisterCobraCmd("secondcmd", secondCmd)
+	RegisterCobraCmd("thirdcmd", thirdCmd)
 
 	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Running root command %+v\n", args)
@@ -157,6 +163,10 @@ func TestCobraFieldsPersistent(t *testing.T) {
 	}
 	secondCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		fmt.Printf("Running second command %+v\n", args)
+		return nil
+	}
+	thirdCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		fmt.Printf("Running third command %+v\n", args)
 		return nil
 	}
 
@@ -197,6 +207,29 @@ func TestCobraFieldsPersistent(t *testing.T) {
 	assert.Equal(t, mystruct.Field3a, uint(0))
 	assert.Equal(t, mystruct.Field3b, uint64(0))
 	assert.Equal(t, true, mystruct.Field4)
+
+	argz = []string{"thirdcmd", "--extremelyimportant", "99"}
+	thirdCmd.SetArgs(argz)
+	err = thirdCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in ParseFlags: %v", err)
+		return
+	}
+	//	secondCmd.ParseFlags(argz)
+	err = PostProcessCobraFlags()
+	if err != nil {
+		t.Errorf("Unexpected error in PostProcessCobraFlags: %v", err)
+		return
+	}
+	err = rootCmd.Execute()
+	if err != nil {
+		t.Errorf("Unexpected error in Execute: %v", err)
+		return
+	}
+	assert.Equal(t, "Value1", mystruct.Field1)
+	assert.Equal(t, "", mystruct.Field2)
+	assert.Equal(t, mystruct.Field3, 99)
+
 }
 
 type MyStructWithPrivateAndTagCobra struct {
@@ -277,7 +310,6 @@ type MyStructWithStructCobra struct {
 	Field5   *string           `env:"ENV5" default:"Eggs" test:"~E.*"`
 	Field6   *int32            `env:"ENV6" default:"701" cflag:"field6" usage:"Usage for field6" cobra:"root"`
 	InnerPtr *InnerStructCobra `yaml:"inner"`
-	Inner    InnerStructCobra  `yaml:"inner2"`
 }
 
 type InnerStructCobra struct {
@@ -287,7 +319,7 @@ type InnerStructCobra struct {
 }
 
 func TestCobrasFieldsWithStruct(t *testing.T) {
-	mystruct := MyStructWithStructCobra{"", "Value2", 0, "?", nil, nil, nil, InnerStructCobra{"", nil, innerStruct{0}}}
+	mystruct := MyStructWithStructCobra{"", "Value2", 0, "?", nil, nil, &InnerStructCobra{"", nil, innerStruct{0}}}
 
 	argz := []string{"--field1", "Ape", "--field3", "1024", "--field6", "8888", "--inner1", "Skynet"}
 
@@ -333,7 +365,7 @@ func TestCobrasFieldsWithStruct(t *testing.T) {
 	assert.Equal(t, mystruct.Field3, 1024)
 	assert.Equal(t, int32(8888), *mystruct.Field6)
 	//	assert.Equal(t, "Skynet", mystruct.InnerPtr.FieldInner1)
-	assert.Equal(t, "Skynet", mystruct.Inner.FieldInner1)
+	assert.Equal(t, "Skynet", mystruct.InnerPtr.FieldInner1)
 }
 
 // func TestCobrasFieldsWithStruct2(t *testing.T) {

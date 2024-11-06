@@ -103,7 +103,7 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 	// 	myflags = flag.CommandLine
 	// }
 
-	setFlagVal := func(parentpath string, fieldName string, fieldValue reflect.Value, tag string, stag string, usagetag string, existing *cobraFlagSetRetriever, myflags *flag.FlagSet) (retriever *cobraFlagSetRetriever, err error) {
+	setFlagVal := func(parentpath string, fieldName string, fieldValue reflect.Value, tag string, stag string, usagetag string, existing *cobraFlagSetRetriever, myflags []*flag.FlagSet) (retriever *cobraFlagSetRetriever, err error) {
 		k := fieldValue.Kind()
 		switch k {
 		// TODO - add support for Ptr to String and Ints
@@ -121,9 +121,15 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 				retriever.retrievers = append(retriever.retrievers, retrieverfunc)
 				retriever.varbool = false
 				if len(stag) > 0 {
-					myflags.BoolVarP(&retriever.varbool, tag, stag, false, usagetag)
+					for _, myflag := range myflags {
+						myflag.BoolVarP(&retriever.varbool, tag, stag, false, usagetag)
+					}
+					//					myflags.BoolVarP(&retriever.varbool, tag, stag, false, usagetag)
 				} else {
-					myflags.BoolVar(&retriever.varbool, tag, false, usagetag)
+					for _, myflag := range myflags {
+						myflag.BoolVar(&retriever.varbool, tag, false, usagetag)
+					}
+					//					myflags.BoolVar(&retriever.varbool, tag, false, usagetag)
 				}
 
 			}
@@ -142,9 +148,15 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 				retriever = &cobraFlagSetRetriever{fieldName: fieldName, fieldValue: fieldValue}
 				retriever.retrievers = append(retriever.retrievers, retrieverfunc)
 				if len(stag) > 0 {
-					myflags.StringVarP(&retriever.varstr, tag, stag, "", usagetag)
+					for _, myflag := range myflags {
+						myflag.StringVarP(&retriever.varstr, tag, stag, "", usagetag)
+					}
+					//					myflags.StringVarP(&retriever.varstr, tag, stag, "", usagetag)
 				} else {
-					myflags.StringVar(&retriever.varstr, tag, "", usagetag)
+					for _, myflag := range myflags {
+						myflag.StringVar(&retriever.varstr, tag, "", usagetag)
+					}
+					//					myflags.StringVar(&retriever.varstr, tag, "", usagetag)
 				}
 			}
 
@@ -163,9 +175,15 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 				retriever = &cobraFlagSetRetriever{fieldName: fieldName, fieldValue: fieldValue}
 				retriever.retrievers = append(retriever.retrievers, retrieverfunc)
 				if len(stag) > 0 {
-					myflags.Int64VarP(&retriever.varint, tag, stag, 0, usagetag)
+					for _, myflag := range myflags {
+						myflag.Int64VarP(&retriever.varint, tag, stag, 0, usagetag)
+					}
+					//					myflags.Int64VarP(&retriever.varint, tag, stag, 0, usagetag)
 				} else {
-					myflags.Int64Var(&retriever.varint, tag, 0, usagetag)
+					for _, myflag := range myflags {
+						myflag.Int64Var(&retriever.varint, tag, 0, usagetag)
+					}
+					//					myflags.Int64Var(&retriever.varint, tag, 0, usagetag)
 				}
 			}
 		case reflect.Uint, reflect.Uint16, reflect.Uint8, reflect.Uint32, reflect.Uint64:
@@ -181,9 +199,15 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 				retriever = &cobraFlagSetRetriever{fieldName: fieldName, fieldValue: fieldValue}
 				retriever.retrievers = append(retriever.retrievers, retrieverfunc)
 				if len(stag) > 0 {
-					myflags.Uint64VarP(&retriever.varuint, tag, stag, 0, usagetag)
+					for _, myflag := range myflags {
+						myflag.Uint64VarP(&retriever.varuint, tag, stag, 0, usagetag)
+					}
+					//					myflags.Uint64VarP(&retriever.varuint, tag, stag, 0, usagetag)
 				} else {
-					myflags.Uint64Var(&retriever.varuint, tag, 0, usagetag)
+					for _, myflag := range myflags {
+						myflag.Uint64Var(&retriever.varuint, tag, 0, usagetag)
+					}
+					//					myflags.Uint64Var(&retriever.varuint, tag, 0, usagetag)
 				}
 			}
 		default:
@@ -192,7 +216,7 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 		return retriever, nil
 	}
 
-	setflagValPtr := func(parentpath string, fieldName string, fieldValue reflect.Value, tag string, stag string, usagetag string, existing *cobraFlagSetRetriever, myflags *flag.FlagSet) (retriever *cobraFlagSetRetriever, err error) {
+	setflagValPtr := func(parentpath string, fieldName string, fieldValue reflect.Value, tag string, stag string, usagetag string, existing *cobraFlagSetRetriever, myflags []*flag.FlagSet) (retriever *cobraFlagSetRetriever, err error) {
 		k := fieldValue.Elem().Kind()
 		switch k {
 		// TODO - add support for Ptr to String and Ints
@@ -210,9 +234,15 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 				retriever.retrievers = append(retriever.retrievers, retrieverfunc)
 				retriever.varbool = false
 				if len(stag) > 0 {
-					myflags.BoolVarP(&retriever.varbool, tag, stag, false, usagetag)
+					for _, myflag := range myflags {
+						myflag.BoolVarP(&retriever.varbool, tag, stag, false, usagetag)
+					}
+					//					myflags.BoolVarP(&retriever.varbool, tag, stag, false, usagetag)
 				} else {
-					myflags.BoolVar(&retriever.varbool, tag, false, usagetag)
+					for _, myflag := range myflags {
+						myflag.BoolVar(&retriever.varbool, tag, false, usagetag)
+					}
+					//					myflags.BoolVar(&retriever.varbool, tag, false, usagetag)
 				}
 			}
 			// retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
@@ -262,9 +292,15 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 				retriever = &cobraFlagSetRetriever{fieldName: fieldName, fieldValue: fieldValue}
 				retriever.retrievers = append(retriever.retrievers, retrieverfunc)
 				if len(stag) > 0 {
-					myflags.StringVarP(&retriever.varstr, tag, stag, "", usagetag)
+					for _, myflag := range myflags {
+						myflag.StringVarP(&retriever.varstr, tag, stag, "", usagetag)
+					}
+					//					myflags.StringVarP(&retriever.varstr, tag, stag, "", usagetag)
 				} else {
-					myflags.StringVar(&retriever.varstr, tag, "", usagetag)
+					for _, myflag := range myflags {
+						myflag.StringVar(&retriever.varstr, tag, "", usagetag)
+					}
+					//					myflags.StringVar(&retriever.varstr, tag, "", usagetag)
 				}
 			}
 
@@ -310,9 +346,15 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 				retriever = &cobraFlagSetRetriever{fieldName: fieldName, fieldValue: fieldValue}
 				retriever.retrievers = append(retriever.retrievers, retrieverfunc)
 				if len(stag) > 0 {
-					myflags.Int64VarP(&retriever.varint, tag, stag, 0, usagetag)
+					for _, myflag := range myflags {
+						myflag.Int64VarP(&retriever.varint, tag, stag, 0, usagetag)
+					}
+					//					myflags.Int64VarP(&retriever.varint, tag, stag, 0, usagetag)
 				} else {
-					myflags.Int64Var(&retriever.varint, tag, 0, usagetag)
+					for _, myflag := range myflags {
+						myflag.Int64Var(&retriever.varint, tag, 0, usagetag)
+					}
+					//					myflags.Int64Var(&retriever.varint, tag, 0, usagetag)
 				}
 			}
 		case reflect.Uint, reflect.Uint16, reflect.Uint8, reflect.Uint32, reflect.Uint64:
@@ -328,9 +370,15 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 				retriever = &cobraFlagSetRetriever{fieldName: fieldName, fieldValue: fieldValue}
 				retriever.retrievers = append(retriever.retrievers, retrieverfunc)
 				if len(stag) > 0 {
-					myflags.Uint64VarP(&retriever.varuint, tag, stag, 0, usagetag)
+					for _, myflag := range myflags {
+						myflag.Uint64VarP(&retriever.varuint, tag, stag, 0, usagetag)
+					}
+					//					myflags.Uint64VarP(&retriever.varuint, tag, stag, 0, usagetag)
 				} else {
-					myflags.Uint64Var(&retriever.varuint, tag, 0, usagetag)
+					for _, myflag := range myflags {
+						myflag.Uint64Var(&retriever.varuint, tag, 0, usagetag)
+					}
+					//					myflags.Uint64Var(&retriever.varuint, tag, 0, usagetag)
 				}
 			}
 		// case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -442,18 +490,18 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 			//			defaultval := field.Tag.Get("default")
 			conftags := field.Tag.Get(CONFFIELD)
 			usagetag := field.Tag.Get(FLAGFIELDUSAGE)
-			cobracmdtag := field.Tag.Get(COBRACMDFIELD)
-
+			cobracmdtaglook := field.Tag.Get(COBRACMDFIELD)
+			cobracmdtags := []string{} // the cobra commands this flag is associated with
 			// persistent flag? true is persistent, false is local
 			var persist bool
-			allcmdtags := strings.Split(cobracmdtag, ",")
-			if len(allcmdtags) > 1 {
-				cobracmdtag = allcmdtags[0]
-				if allcmdtags[1] == "persistent" {
+			allcmdtag := strings.Split(cobracmdtaglook, ",")
+			for _, ctag := range allcmdtag {
+				if ctag == "persistent" {
 					persist = true
 				} else {
-					err = fmt.Errorf("field %s: invalid modifier on cobra command tag: %s", field.Name, allcmdtags[1])
-					return
+					if len(ctag) > 0 {
+						cobracmdtags = append(cobracmdtags, strings.TrimSpace(ctag))
+					}
 				}
 			}
 
@@ -462,7 +510,7 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 			if skipField(confops) {
 				continue
 			}
-			debugf("cflag: Field Name: %s, cflag val: %s, cobra cmd: %s\n", field.Name, tag, cobracmdtag)
+			debugf("cflag: Field Name: %s, cflag val: %s, cobra cmd: %v\n", field.Name, tag, cobracmdtags)
 			// if len(defaultval) > 0 {
 			// Get the field value
 			fieldValue := inputValue.FieldByName(field.Name)
@@ -473,19 +521,21 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 			// Only do substitution if the field value can be changed
 			if !field.IsExported() {
 				debugf("cflag: Field %s is not exported\n", field.Name)
-				if len(cobracmdtag) > 0 || len(tag) > 0 {
+				// yes, but does the field have a tag?
+				if len(cobracmdtaglook) > 0 || len(tag) > 0 {
 					err = fmt.Errorf("field %s: field is not exported", field.Name)
 					return
 				} else {
 					continue
 				}
 			}
-			if (len(cobracmdtag) > 0 && len(tag) < 1) || (len(cobracmdtag) < 1 && len(tag) > 0) {
+			if (len(cobracmdtaglook) > 0 && len(tag) < 1) || (len(cobracmdtaglook) < 1 && len(tag) > 0) {
 				return fmt.Errorf("field %s: 'cflag' and 'cobra' tag must both be present", field.Name)
 			}
-			var pflags *flag.FlagSet
+			var allpflags []*flag.FlagSet
 			// get pflags for the cobra command
-			if len(cobracmdtag) > 0 {
+			//			if len(cobracmdtags) > 0 {
+			for _, cobracmdtag := range cobracmdtags {
 				cmd, ok := cobraCommands[cobracmdtag]
 				if !ok {
 					return fmt.Errorf("field %s: cobra command %s not found", field.Name, cobracmdtag)
@@ -493,11 +543,25 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 				//				pflags = cmd.PersistentFlags()
 				if persist {
 					debugf("cflag: Field %s is persistent flag\n", field.Name)
-					pflags = cmd.PersistentFlags()
+					pflags := cmd.PersistentFlags()
+					allpflags = append(allpflags, pflags)
 				} else {
-					pflags = cmd.Flags()
+					pflags := cmd.Flags()
+					allpflags = append(allpflags, pflags)
 				}
 			}
+			// cmd, ok := cobraCommands[cobracmdtag]
+			// if !ok {
+			// 	return fmt.Errorf("field %s: cobra command %s not found", field.Name, cobracmdtag)
+			// }
+			// //				pflags = cmd.PersistentFlags()
+			// if persist {
+			// 	debugf("cflag: Field %s is persistent flag\n", field.Name)
+			// 	pflags = cmd.PersistentFlags()
+			// } else {
+			// 	pflags = cmd.Flags()
+			// }
+			//		}
 			// is this a Ptr to a struct?
 			if field.Type.Kind() == reflect.Ptr {
 				// recurse
@@ -555,13 +619,13 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 						if len(tag) > 0 {
 							existing, ok := ret.needflags[tag] // check if we already have a retriever for this flag
 							if ok {
-								_, err = setflagValPtr(parentpath, field.Name, fieldValue, tag, stag, usagetag, existing, pflags)
+								_, err = setflagValPtr(parentpath, field.Name, fieldValue, tag, stag, usagetag, existing, allpflags)
 								if err != nil {
 									return
 								}
 							} else {
 								var retriever *cobraFlagSetRetriever
-								retriever, err = setflagValPtr(parentpath, field.Name, fieldValue, tag, stag, usagetag, nil, pflags)
+								retriever, err = setflagValPtr(parentpath, field.Name, fieldValue, tag, stag, usagetag, nil, allpflags)
 								if err != nil {
 									return
 								}
@@ -583,13 +647,13 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 				if len(tag) > 0 {
 					existing, ok := ret.needflags[tag] // check if we already have a retriever for this flag
 					if ok {
-						_, err = setFlagVal(parentpath, field.Name, fieldValue, tag, stag, usagetag, existing, pflags)
+						_, err = setFlagVal(parentpath, field.Name, fieldValue, tag, stag, usagetag, existing, allpflags)
 						if err != nil {
 							return
 						}
 					} else {
 						var retriever *cobraFlagSetRetriever
-						retriever, err = setFlagVal(parentpath, field.Name, fieldValue, tag, stag, usagetag, nil, pflags)
+						retriever, err = setFlagVal(parentpath, field.Name, fieldValue, tag, stag, usagetag, nil, allpflags)
 						if err != nil {
 							return
 						}
