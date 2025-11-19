@@ -78,6 +78,41 @@ func RegisterCobraCmd(name string, cmd *cobra.Command) {
 	cobraCommands[name] = cmd
 }
 
+// resolveCobraCommand resolves a cobra command using dot notation
+// e.g., "user.create" would find the "create" subcommand under "user"
+func resolveCobraCommand(cmdPath string) (*cobra.Command, error) {
+	parts := strings.Split(cmdPath, ".")
+
+	// Get the root command
+	rootCmd, ok := cobraCommands[parts[0]]
+	if !ok {
+		return nil, fmt.Errorf("cobra command %s not found", parts[0])
+	}
+
+	// If no subcommand, return the root
+	if len(parts) == 1 {
+		return rootCmd, nil
+	}
+
+	// Navigate the command hierarchy
+	currentCmd := rootCmd
+	for i := 1; i < len(parts); i++ {
+		found := false
+		for _, subCmd := range currentCmd.Commands() {
+			if subCmd.Name() == parts[i] {
+				currentCmd = subCmd
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("cobra subcommand %s not found in %s", parts[i], strings.Join(parts[:i], "."))
+		}
+	}
+
+	return currentCmd, nil
+}
+
 func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *ProcessedCobraTags, err error) {
 	ret = &ProcessedCobraTags{}
 	if opts == nil {
@@ -536,9 +571,9 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 			// get pflags for the cobra command
 			//			if len(cobracmdtags) > 0 {
 			for _, cobracmdtag := range cobracmdtags {
-				cmd, ok := cobraCommands[cobracmdtag]
-				if !ok {
-					return fmt.Errorf("field %s: cobra command %s not found", field.Name, cobracmdtag)
+				cmd, err := resolveCobraCommand(cobracmdtag)
+				if err != nil {
+					return fmt.Errorf("field %s: %v", field.Name, err)
 				}
 				//				pflags = cmd.PersistentFlags()
 				if persist {

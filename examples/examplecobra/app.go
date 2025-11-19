@@ -31,10 +31,12 @@ type LogSetup struct {
 }
 
 type Config struct {
-	WebhookURL string    `yaml:"webhook_url" env:"APP_HOOK_URL" test:"~https://.*" cflag:"webhookurl" usage:"URL to send webhooks to" cobra:"root"`
-	Port       int       `yaml:"port" env:"APP_PORT" default:"8888" test:">=1024,<65537" cflag:"port" usage:"Port to listen on" cobra:"root"`
-	SSL        *SSLStuff `yaml:"sslstuff"`
-	Servers    []*Server `yaml:"servers"`
+	WebhookURL      string    `yaml:"webhook_url" env:"APP_HOOK_URL" test:"~https://.*" cflag:"webhookurl" usage:"URL to send webhooks to" cobra:"root"`
+	Port            int       `yaml:"port" env:"APP_PORT" default:"8888" test:">=1024,<65537" cflag:"port" usage:"Port to listen on" cobra:"root"`
+	OptionA         string    `yaml:"option_a" env:"OPTION_A" cflag:"optiona" usage:"Option A" cobra:"other3"`
+	UserCreateEmail string    `yaml:"user_create_email" env:"USER_CREATE_EMAIL" cflag:"usercreateemail" usage:"Email to send user creation notifications to" cobra:"user.create"`
+	SSL             *SSLStuff `yaml:"sslstuff"`
+	Servers         []*Server `yaml:"servers"`
 	// LogSetup is a complex object
 	// so we use the defaultLogSetup function to set it if its not already set
 	// skipnil = means that if the pointer is nil we will not create what it can point to
@@ -127,6 +129,26 @@ func RunMain() {
 
 	conftagz.RegisterCobraCmd("other3", other3Cmd)
 
+	// now we are going to create a command with a subcommand: user create
+	var userCmd = &cobra.Command{
+		Use:   "user",
+		Short: "User management",
+	}
+
+	var createUserCmd = &cobra.Command{
+		Use:   "create",
+		Short: "Create a new user",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Printf("Creating user\n")
+			fmt.Printf("UserCreateEmail: %s\n", config.UserCreateEmail)
+			return nil
+		},
+	}
+
+	userCmd.AddCommand(createUserCmd)
+
+	conftagz.RegisterCobraCmd("user", userCmd)
+
 	// Root command flags
 	// var boolFlag bool
 	// var stringFlag string
@@ -182,6 +204,7 @@ func RunMain() {
 	rootCmd.AddCommand(otherCmd)
 	rootCmd.AddCommand(oneMoreStructCmd)
 	rootCmd.AddCommand(other3Cmd)
+	rootCmd.AddCommand(userCmd)
 	// Force cobra to parse the flags before running conftagz.Process
 	// You will need to parse all the flags for all the commands
 	// which have any conftagz fields
@@ -189,6 +212,8 @@ func RunMain() {
 	otherCmd.ParseFlags(os.Args)
 	other3Cmd.ParseFlags(os.Args)
 	oneMoreStructCmd.ParseFlags(os.Args)
+	userCmd.ParseFlags(os.Args)
+	createUserCmd.ParseFlags(os.Args)
 
 	// Run conftagz on the config struct
 	// to validate the config, sub any env vars, and put in defaults for missing items

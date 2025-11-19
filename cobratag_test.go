@@ -569,3 +569,130 @@ func TestCobrasFieldsWithStruct(t *testing.T) {
 // 	assert.Equal(t, mystruct.SliceField2[0].FieldInner1, "InnerApple")
 // 	assert.Equal(t, mystruct.InnerStructCustom.FieldInner1, "I123e")
 // }
+
+// TestCobraSubcommands tests support for multi-level commands with dot notation
+func TestCobraSubcommands(t *testing.T) {
+	ResetGlobals()
+	
+	type ConfigWithSubcommand struct {
+		UserEmail      string `cflag:"useremail" usage:"User email" cobra:"user.create"`
+		AdminEmail     string `cflag:"adminemail" usage:"Admin email" cobra:"admin.user.delete"`
+		RootFlag       string `cflag:"rootflag" usage:"Root flag" cobra:"root"`
+		MixedFlag      string `cflag:"mixedflag" usage:"Mixed flag" cobra:"root,user.create"`
+		PersistentFlag bool   `cflag:"persistflag" usage:"Persistent flag" cobra:"user,persistent"`
+	}
+	
+	mystruct := ConfigWithSubcommand{}
+	
+	// Create command hierarchy
+	var rootCmd = &cobra.Command{Use: "app"}
+	var userCmd = &cobra.Command{Use: "user"}
+	var createCmd = &cobra.Command{Use: "create"}
+	var adminCmd = &cobra.Command{Use: "admin"}
+	var adminUserCmd = &cobra.Command{Use: "user"}
+	var deleteCmd = &cobra.Command{Use: "delete"}
+	
+	// Build hierarchy
+	userCmd.AddCommand(createCmd)
+	adminCmd.AddCommand(adminUserCmd)
+	adminUserCmd.AddCommand(deleteCmd)
+	rootCmd.AddCommand(userCmd)
+	rootCmd.AddCommand(adminCmd)
+	
+	// Register commands
+	RegisterCobraCmd("root", rootCmd)
+	RegisterCobraCmd("user", userCmd)
+	RegisterCobraCmd("admin", adminCmd)
+	
+	// Process cobra flags
+	err := PreProcessCobraFlags(&mystruct, nil)
+	assert.NoError(t, err)
+	
+	// Test that flags are on correct commands
+	flag := createCmd.Flags().Lookup("useremail")
+	assert.NotNil(t, flag, "useremail flag should be on user.create command")
+	
+	flag = deleteCmd.Flags().Lookup("adminemail")
+	assert.NotNil(t, flag, "adminemail flag should be on admin.user.delete command")
+	
+	flag = rootCmd.Flags().Lookup("rootflag")
+	assert.NotNil(t, flag, "rootflag should be on root command")
+	
+	// Test mixed notation (flag on multiple commands)
+	flag = rootCmd.Flags().Lookup("mixedflag")
+	assert.NotNil(t, flag, "mixedflag should be on root command")
+	
+	flag = createCmd.Flags().Lookup("mixedflag")
+	assert.NotNil(t, flag, "mixedflag should also be on user.create command")
+	
+	// Test persistent flag
+	flag = userCmd.PersistentFlags().Lookup("persistflag")
+	assert.NotNil(t, flag, "persistflag should be persistent on user command")
+}
+
+// TestCobraSubcommandErrors tests error handling for non-existent subcommands
+func TestCobraSubcommandErrors(t *testing.T) {
+	ResetGlobals()
+	
+	type ConfigWithBadSubcommand struct {
+		BadFlag1 string `cflag:"badflag1" usage:"Bad flag 1" cobra:"nonexistent"`
+		BadFlag2 string `cflag:"badflag2" usage:"Bad flag 2" cobra:"user.nonexistent"`
+		BadFlag3 string `cflag:"badflag3" usage:"Bad flag 3" cobra:"root.user.deep.nonexistent"`
+	}
+	
+	// Only register root command, not the subcommands referenced
+	var rootCmd = &cobra.Command{Use: "app"}
+	RegisterCobraCmd("root", rootCmd)
+	
+	// Test non-existent root command
+	mystruct1 := ConfigWithBadSubcommand{}
+	err := PreProcessCobraFlags(&mystruct1, nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "cobra command nonexistent not found")
+	
+	// Register user command for next test
+	var userCmd = &cobra.Command{Use: "user"}
+	rootCmd.AddCommand(userCmd)
+	RegisterCobraCmd("user", userCmd)
+	
+	// Test non-existent subcommand
+	type ConfigWithBadSubcommand2 struct {
+		BadFlag2 string `cflag:"badflag2" usage:"Bad flag 2" cobra:"user.nonexistent"`
+	}
+	mystruct2 := ConfigWithBadSubcommand2{}
+	err = PreProcessCobraFlags(&mystruct2, nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "cobra subcommand nonexistent not found in user")
+}
+
+// TestCobraSubcommandWithExisting tests that existing flat notation still works
+func TestCobraSubcommandWithExisting(t *testing.T) {
+	ResetGlobals()
+	
+	type ConfigMixed struct {
+		FlatFlag       string `cflag:"flatflag" usage:"Flat flag" cobra:"root"`
+		SubcommandFlag string `cflag:"subflag" usage:"Sub flag" cobra:"user.create"`
+	}
+	
+	mystruct := ConfigMixed{}
+	
+	var rootCmd = &cobra.Command{Use: "app"}
+	var userCmd = &cobra.Command{Use: "user"}
+	var createCmd = &cobra.Command{Use: "create"}
+	
+	userCmd.AddCommand(createCmd)
+	rootCmd.AddCommand(userCmd)
+	
+	RegisterCobraCmd("root", rootCmd)
+	RegisterCobraCmd("user", userCmd)
+	
+	err := PreProcessCobraFlags(&mystruct, nil)
+	assert.NoError(t, err)
+	
+	// Both should work
+	flag := rootCmd.Flags().Lookup("flatflag")
+	assert.NotNil(t, flag, "flat notation should still work")
+	
+	flag = createCmd.Flags().Lookup("subflag")
+	assert.NotNil(t, flag, "dot notation should work")
+}
