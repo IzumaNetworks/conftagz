@@ -74,6 +74,59 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 		throwErrorIfEnvMissing = opts.ThrowErrorIfEnvMissing
 	}
 
+	// setEnvSlice handles env var substitution for slice fields.
+	// Values are comma-separated. Supports []string, []int*, []uint*, []float*.
+	setEnvSlice := func(parentpath string, fieldName string, sliceValue reflect.Value, val string) error {
+		parsedVals := strings.Split(val, ",")
+		elemKind := sliceValue.Type().Elem().Kind()
+		switch elemKind {
+		case reflect.String:
+			for _, parsedVal := range parsedVals {
+				sliceValue.Set(reflect.Append(sliceValue, reflect.ValueOf(parsedVal)))
+			}
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			for _, parsedVal := range parsedVals {
+				nval, err := StringToInt64(strings.TrimSpace(parsedVal))
+				if err != nil {
+					return fmt.Errorf("map (env) %s slice value %s not a number", fieldName, parsedVal)
+				}
+				if reflect.ValueOf(nval).CanConvert(sliceValue.Type().Elem()) {
+					sliceValue.Set(reflect.Append(sliceValue, reflect.ValueOf(nval).Convert(sliceValue.Type().Elem())))
+				} else {
+					return fmt.Errorf("map (env) %s slice value %s out of range for %s", fieldName, parsedVal, sliceValue.Type().Elem().String())
+				}
+			}
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			for _, parsedVal := range parsedVals {
+				nval, err := StringToUint64(strings.TrimSpace(parsedVal))
+				if err != nil {
+					return fmt.Errorf("map (env) %s slice value %s not a number", fieldName, parsedVal)
+				}
+				if reflect.ValueOf(nval).CanConvert(sliceValue.Type().Elem()) {
+					sliceValue.Set(reflect.Append(sliceValue, reflect.ValueOf(nval).Convert(sliceValue.Type().Elem())))
+				} else {
+					return fmt.Errorf("map (env) %s slice value %s out of range for %s", fieldName, parsedVal, sliceValue.Type().Elem().String())
+				}
+			}
+		case reflect.Float32, reflect.Float64:
+			for _, parsedVal := range parsedVals {
+				nval, err := StringToFloat64(strings.TrimSpace(parsedVal))
+				if err != nil {
+					return fmt.Errorf("map (env) %s slice value %s not a number", fieldName, parsedVal)
+				}
+				if reflect.ValueOf(nval).CanConvert(sliceValue.Type().Elem()) {
+					sliceValue.Set(reflect.Append(sliceValue, reflect.ValueOf(nval).Convert(sliceValue.Type().Elem())))
+				} else {
+					return fmt.Errorf("map (env) %s slice value %s out of range for %s", fieldName, parsedVal, sliceValue.Type().Elem().String())
+				}
+			}
+		default:
+			return fmt.Errorf("map (env) for %s slice element type %s unsupported", fieldName, elemKind.String())
+		}
+		ret = append(ret, addParentPath(parentpath, fieldName))
+		return nil
+	}
+
 	setEnvVal := func(parentpath string, fieldName string, fieldValue reflect.Value, tag string) error {
 		if val, ok := m[tag]; ok {
 			k := fieldValue.Kind()
@@ -109,6 +162,9 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 
 				fieldValue.SetUint(nval)
 				ret = append(ret, addParentPath(parentpath, fieldName))
+			case reflect.Slice:
+				// Comma-separated values for slice types
+				return setEnvSlice(parentpath, fieldName, fieldValue, val)
 			default:
 				return fmt.Errorf("map (env) for %s underlying type unsupported (setEnvVal)", fieldValue.Type().String())
 			}

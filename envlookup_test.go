@@ -175,18 +175,16 @@ func TestEnvFieldSubstitutionStruct3NonNilStructs(t *testing.T) {
 	assert.Equal(t, mystruct.InnerPtr.Stuff1, "blah")
 }
 
-// Slice is not supported for env vars. so should just ignore slice field
+// Test env vars with comma-separated values for []string slices
 func TestEnvFieldsWithSlice(t *testing.T) {
 	mystruct := MyStructWithSlice{"", nil}
 
 	envMap := map[string]string{
-		"Important":          "NewValue1",
-		"VeryImportant":      "NewValue2",
-		"ExtremelyImportant": "123",
-		"STUFF1":             "InnerValue1",
+		"Important": "NewValue1",
+		"SLICE":     "One,Two,Three",
 	}
 
-	expected := []string{"Field1"}
+	expected := []string{"Field1", "SliceField"}
 
 	result, err := EnvFieldSubstitutionFromMap(&mystruct, nil, envMap)
 	if err != nil {
@@ -197,6 +195,72 @@ func TestEnvFieldsWithSlice(t *testing.T) {
 		t.Errorf("Expected %v, but got %v", expected, result)
 	}
 
-	assert.Equal(t, mystruct.Field1, "NewValue1")
+	assert.Equal(t, "NewValue1", mystruct.Field1)
+	assert.Equal(t, []string{"One", "Two", "Three"}, mystruct.SliceField)
+}
 
+// Test env vars with single value for []string slice
+func TestEnvFieldsWithSliceSingleValue(t *testing.T) {
+	mystruct := MyStructWithSlice{"", nil}
+
+	envMap := map[string]string{
+		"Important": "NewValue1",
+		"SLICE":     "OnlyOne",
+	}
+
+	result, err := EnvFieldSubstitutionFromMap(&mystruct, nil, envMap)
+	assert.NoError(t, err)
+	assert.Contains(t, result, "SliceField")
+	assert.Equal(t, []string{"OnlyOne"}, mystruct.SliceField)
+}
+
+// Test env vars for int, uint, float slices
+func TestEnvFieldsWithNumericSlices(t *testing.T) {
+	mystruct := MyStructWithEnvSlices{}
+
+	envMap := map[string]string{
+		"ENV_STRINGS": "a,b,c",
+		"ENV_INTS":    "1, 2, 3",
+		"ENV_INT32S":  "10,20,30",
+		"ENV_UINTS":   "100,200,300",
+		"ENV_UINT64S": "1000,2000,3000",
+		"ENV_FLOATS":  "1.1, 2.2, 3.3",
+	}
+
+	result, err := EnvFieldSubstitutionFromMap(&mystruct, nil, envMap)
+	assert.NoError(t, err)
+	assert.Len(t, result, 6)
+
+	assert.Equal(t, []string{"a", "b", "c"}, mystruct.StringSlice)
+	assert.Equal(t, []int{1, 2, 3}, mystruct.IntSlice)
+	assert.Equal(t, []int32{10, 20, 30}, mystruct.Int32Slice)
+	assert.Equal(t, []uint{100, 200, 300}, mystruct.UintSlice)
+	assert.Equal(t, []uint64{1000, 2000, 3000}, mystruct.Uint64Slice)
+	assert.Equal(t, []float64{1.1, 2.2, 3.3}, mystruct.Float64Slice)
+}
+
+// Test env var with bad int value in slice
+func TestEnvFieldsWithSliceBadInt(t *testing.T) {
+	mystruct := MyStructWithEnvSlices{}
+
+	envMap := map[string]string{
+		"ENV_INTS": "1,notanumber,3",
+	}
+
+	_, err := EnvFieldSubstitutionFromMap(&mystruct, nil, envMap)
+	assert.Error(t, err)
+}
+
+// Test that missing env var for slice is ignored (no error when ThrowErrorIfEnvMissing is false)
+func TestEnvFieldsWithSliceMissingEnv(t *testing.T) {
+	mystruct := MyStructWithSlice{"", nil}
+
+	envMap := map[string]string{
+		"Important": "NewValue1",
+	}
+
+	result, err := EnvFieldSubstitutionFromMap(&mystruct, nil, envMap)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"Field1"}, result)
+	assert.Nil(t, mystruct.SliceField)
 }

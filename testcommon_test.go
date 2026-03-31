@@ -72,7 +72,16 @@ type InnerStruct2 struct {
 
 type MyStructWithSlice struct {
 	Field1     string   `yaml:"important" env:"Important" default:"Apple"`
-	SliceField []string `yaml:"slice" default:"Apple,Banana"` // env:"SLICE"
+	SliceField []string `yaml:"slice" env:"SLICE" default:"Apple,Banana"`
+}
+
+type MyStructWithEnvSlices struct {
+	StringSlice  []string  `env:"ENV_STRINGS"`
+	IntSlice     []int     `env:"ENV_INTS"`
+	Int32Slice   []int32   `env:"ENV_INT32S"`
+	UintSlice    []uint    `env:"ENV_UINTS"`
+	Uint64Slice  []uint64  `env:"ENV_UINT64S"`
+	Float64Slice []float64 `env:"ENV_FLOATS"`
 }
 
 type AStructWithCustom struct {
