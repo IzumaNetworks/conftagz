@@ -76,8 +76,12 @@ func EnvFieldSubstitutionFromMap(somestruct interface{}, opts *EnvFieldSubstOpts
 
 	// setEnvSlice handles env var substitution for slice fields.
 	// Values are comma-separated. Supports []string, []int*, []uint*, []float*.
+	// The env var fully replaces any existing slice values (e.g. from YAML),
+	// consistent with how scalar env vars replace their YAML counterparts.
 	setEnvSlice := func(parentpath string, fieldName string, sliceValue reflect.Value, val string) error {
 		parsedVals := strings.Split(val, ",")
+		// Clear existing values so env var replaces rather than appends to YAML values
+		sliceValue.Set(reflect.MakeSlice(sliceValue.Type(), 0, len(parsedVals)))
 		elemKind := sliceValue.Type().Elem().Kind()
 		switch elemKind {
 		case reflect.String:
