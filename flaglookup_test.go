@@ -249,6 +249,75 @@ func TestFlagsFieldsWithSlice(t *testing.T) {
 
 }
 
+// Test repeated flags for []string slices: -items a -items b -items c
+func TestFlagFieldsWithStringSlice(t *testing.T) {
+	mystruct := MyStructWithFlagSlice{}
+	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
+	argz := []string{"-field1", "hello", "-items", "a", "-items", "b", "-items", "c"}
+
+	err := ProcessFlagsWithFlagSet(&mystruct, flagset, argz)
+	assert.NoError(t, err)
+	assert.Equal(t, "hello", mystruct.Field1)
+	assert.Equal(t, []string{"a", "b", "c"}, mystruct.SliceField)
+}
+
+// Test repeated flags for []int slices: -nums 1 -nums 2 -nums 3
+func TestFlagFieldsWithIntSlice(t *testing.T) {
+	mystruct := MyStructWithFlagSlice{}
+	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
+	argz := []string{"-nums", "10", "-nums", "20", "-nums", "30"}
+
+	err := ProcessFlagsWithFlagSet(&mystruct, flagset, argz)
+	assert.NoError(t, err)
+	assert.Equal(t, []int{10, 20, 30}, mystruct.IntSlice)
+}
+
+// Test repeated flags for []uint64 slices
+func TestFlagFieldsWithUintSlice(t *testing.T) {
+	mystruct := MyStructWithFlagSlice{}
+	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
+	argz := []string{"-uints", "100", "-uints", "200"}
+
+	err := ProcessFlagsWithFlagSet(&mystruct, flagset, argz)
+	assert.NoError(t, err)
+	assert.Equal(t, []uint64{100, 200}, mystruct.UintSlice)
+}
+
+// Test single flag value for slice
+func TestFlagFieldsWithSliceSingleValue(t *testing.T) {
+	mystruct := MyStructWithFlagSlice{}
+	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
+	argz := []string{"-items", "only"}
+
+	err := ProcessFlagsWithFlagSet(&mystruct, flagset, argz)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"only"}, mystruct.SliceField)
+}
+
+// Test no flag provided leaves slice nil
+func TestFlagFieldsWithSliceNoFlag(t *testing.T) {
+	mystruct := MyStructWithFlagSlice{}
+	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
+	argz := []string{"-field1", "hello"}
+
+	err := ProcessFlagsWithFlagSet(&mystruct, flagset, argz)
+	assert.NoError(t, err)
+	assert.Equal(t, "hello", mystruct.Field1)
+	assert.Nil(t, mystruct.SliceField)
+	assert.Nil(t, mystruct.IntSlice)
+}
+
+// Test bad int value in repeated flag
+func TestFlagFieldsWithSliceBadInt(t *testing.T) {
+	mystruct := MyStructWithFlagSlice{}
+	flagset := flag.NewFlagSet("test", flag.ContinueOnError)
+	argz := []string{"-nums", "10", "-nums", "notanumber"}
+
+	// The error happens during FinalizeFlags, not Parse
+	err := ProcessFlagsWithFlagSet(&mystruct, flagset, argz)
+	assert.Error(t, err)
+}
+
 func TestFlagsCustomFunc(t *testing.T) {
 	mystruct := AStructWithCustom{}
 

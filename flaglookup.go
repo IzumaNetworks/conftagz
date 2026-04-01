@@ -7,6 +7,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 const FLAGFIELD = "flag"
@@ -273,6 +274,84 @@ func ProcessFlagTags(somestruct interface{}, opts *FlagFieldSubstOpts) (ret *Pro
 					return nil
 				})
 			}
+		case reflect.Slice:
+			elemKind := fieldValue.Type().Elem().Kind()
+			switch elemKind {
+			case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+				reflect.Float32, reflect.Float64:
+			default:
+				return nil, fmt.Errorf("(flag) %s slice element type %s unsupported", fieldName, elemKind.String())
+			}
+
+			sliceType := fieldValue.Type()
+			retrieverfunc := func(flagname string, r *flagSetRetriever) (err error) {
+				if r.touched {
+					rawVals, ok := r.val.(*[]string)
+					if !ok {
+						return fmt.Errorf("flag %s underlying interface{} type coercion failed", tag)
+					}
+					newSlice := reflect.MakeSlice(sliceType, 0, len(*rawVals))
+					for _, raw := range *rawVals {
+						switch elemKind {
+						case reflect.String:
+							newSlice = reflect.Append(newSlice, reflect.ValueOf(raw))
+						case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+							nval, err := StringToInt64(strings.TrimSpace(raw))
+							if err != nil {
+								return fmt.Errorf("flag %s value %s not a number", tag, raw)
+							}
+							if reflect.ValueOf(nval).CanConvert(sliceType.Elem()) {
+								newSlice = reflect.Append(newSlice, reflect.ValueOf(nval).Convert(sliceType.Elem()))
+							} else {
+								return fmt.Errorf("flag %s value %s out of range for %s", tag, raw, sliceType.Elem().String())
+							}
+						case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+							nval, err := StringToUint64(strings.TrimSpace(raw))
+							if err != nil {
+								return fmt.Errorf("flag %s value %s not a number", tag, raw)
+							}
+							if reflect.ValueOf(nval).CanConvert(sliceType.Elem()) {
+								newSlice = reflect.Append(newSlice, reflect.ValueOf(nval).Convert(sliceType.Elem()))
+							} else {
+								return fmt.Errorf("flag %s value %s out of range for %s", tag, raw, sliceType.Elem().String())
+							}
+						case reflect.Float32, reflect.Float64:
+							nval, err := StringToFloat64(strings.TrimSpace(raw))
+							if err != nil {
+								return fmt.Errorf("flag %s value %s not a number", tag, raw)
+							}
+							if reflect.ValueOf(nval).CanConvert(sliceType.Elem()) {
+								newSlice = reflect.Append(newSlice, reflect.ValueOf(nval).Convert(sliceType.Elem()))
+							} else {
+								return fmt.Errorf("flag %s value %s out of range for %s", tag, raw, sliceType.Elem().String())
+							}
+						}
+					}
+					fieldValue.Set(newSlice)
+				}
+				return nil
+			}
+
+			if existing != nil {
+				existing.retrievers = append(existing.retrievers, retrieverfunc)
+			} else {
+				retriever = &flagSetRetriever{fieldName: fieldName, fieldValue: fieldValue}
+				retriever.retrievers = append(retriever.retrievers, retrieverfunc)
+				rawVals := &[]string{}
+				retriever.val = rawVals
+				touchedOnce := false
+				myflags.Func(tag, usagetag, func(s string) error {
+					*rawVals = append(*rawVals, s)
+					retriever.touched = true
+					if !touchedOnce {
+						ret.fieldsTouched = append(ret.fieldsTouched, addParentPath(parentpath, fieldName))
+						touchedOnce = true
+					}
+					return nil
+				})
+			}
+
 		default:
 			return nil, fmt.Errorf("(flag) %s underlying type unsupported (setFlagVal)", fieldValue.Type().String())
 		}

@@ -75,6 +75,13 @@ type MyStructWithSlice struct {
 	SliceField []string `yaml:"slice" env:"SLICE" default:"Apple,Banana"`
 }
 
+type MyStructWithFlagSlice struct {
+	Field1     string   `flag:"field1"`
+	SliceField []string `flag:"items" usage:"list of items"`
+	IntSlice   []int    `flag:"nums" usage:"list of numbers"`
+	UintSlice  []uint64 `flag:"uints"`
+}
+
 type MyStructWithEnvSlices struct {
 	StringSlice  []string  `env:"ENV_STRINGS"`
 	IntSlice     []int     `env:"ENV_INTS"`
