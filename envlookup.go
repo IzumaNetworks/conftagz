@@ -11,6 +11,12 @@ import (
 type EnvFieldSubstOpts struct {
 	// throws an error if the environment variable is not found
 	ThrowErrorIfEnvMissing bool
+	// If true, read a .env file and merge its values with the environment.
+	// Real environment variables take priority over .env values.
+	UseDotEnv bool
+	// Optional path to the .env file. If empty and UseDotEnv is true,
+	// defaults to ".env" in the current working directory.
+	DotEnvFilePath string
 }
 
 const ENVFIELD = "env"
@@ -33,6 +39,18 @@ func EnvToMap() map[string]string {
 // If there is an error, it returns an error
 func EnvFieldSubstitution(somestruct interface{}, opts *EnvFieldSubstOpts) (ret []string, err error) {
 	m := EnvToMap()
+	if opts != nil && opts.UseDotEnv {
+		dotenvPath := opts.DotEnvFilePath
+		if dotenvPath == "" {
+			dotenvPath = ".env"
+		}
+		dotenvMap, dotenvErr := LoadDotEnvFile(dotenvPath)
+		if dotenvErr != nil {
+			return nil, dotenvErr
+		}
+		// .env is the base, real env vars override
+		m = MergeMaps(dotenvMap, m)
+	}
 	return EnvFieldSubstitutionFromMap(somestruct, opts, m)
 }
 func StringToInt64(s string) (int64, error) {

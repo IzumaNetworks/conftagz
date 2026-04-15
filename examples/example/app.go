@@ -44,8 +44,14 @@ func RunMain() {
 
 	// Run conftagz on the config struct
 	// to validate the config, sub any env vars,
-	// and put in defaults for missing items
-	err = conftagz.Process(nil, &config)
+	// and put in defaults for missing items.
+	// UseDotEnv will read .env from the current working directory.
+	// Real env vars take priority over .env values.
+	err = conftagz.Process(&conftagz.ConfTagOpts{
+		EnvOpts: &conftagz.EnvFieldSubstOpts{
+			UseDotEnv: true,
+		},
+	}, &config)
 	if err != nil {
 		// some test tag failed
 		log.Fatalf("Config is bad: %v\n", err)

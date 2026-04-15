@@ -18,3 +18,4 @@ func TestExample2Execution(t *testing.T) {
 	RunMain()
 	t.Log("Example2 ran successfully")
 }
+

@@ -81,9 +81,14 @@ func RunMain() {
 	}
 
 	// Run conftagz on the config struct
-	// to validate the config, sub any env vars, and put in defaults for missing items
-	// pass in the option to use our own flag set
+	// to validate the config, sub any env vars, and put in defaults for missing items.
+	// pass in the option to use our own flag set.
+	// UseDotEnv will read .env from the current working directory.
+	// Real env vars take priority over .env values.
 	err = conftagz.Process(&conftagz.ConfTagOpts{
+		EnvOpts: &conftagz.EnvFieldSubstOpts{
+			UseDotEnv: true,
+		},
 		FlagTagOpts: &conftagz.FlagFieldSubstOpts{
 			UseFlags: flagset,
 		},
@@ -98,6 +103,9 @@ func RunMain() {
 	// You can call conftagz on multiple structs also
 	// and with the same flag options if needed
 	err = conftagz.Process(&conftagz.ConfTagOpts{
+		EnvOpts: &conftagz.EnvFieldSubstOpts{
+			UseDotEnv: true,
+		},
 		FlagTagOpts: &conftagz.FlagFieldSubstOpts{
 			UseFlags: flagset,
 		},
