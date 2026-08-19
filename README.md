@@ -159,6 +159,7 @@ Structs & Slices
 - Default structs can be created if the yaml parser left a struct pointer `nil` by using a custom `DefaultFunc` like `default:"$(mydefaultfunc)"` See _custom defaults_
 - `conftagz` will automatically create a new struct if the struct pointer is `nil`. This behavior can be avoided with `conf:"skip"` or `conf:"skipnil"`
 - Nil slices of pointers to structs will be left alone without a custom function
+- Slice support varies a bit by tag. The `cflag:`/`cobra:` path supports `[]string` only - see [Using Cobra for flags](#using-cobra-for-flags)
 
 Not supported
 - Interfaces or `interface{}`
@@ -369,6 +370,8 @@ type Config struct {
 	Port       int       `yaml:"port" test:">=1024,<65537" cflag:"port" usage:"Port to listen on" cobra:"root"`
 	SSL        *SSLStuff `yaml:"sslstuff"`
 	Servers    []*Server `yaml:"servers"`
+	// a repeatable flag: --label a=b --label c=d
+	Labels     []string  `yaml:"labels" cflag:"label" usage:"Label in key=value form" cobra:"root"`
 	// both a long and short --verbose or -v
 	// cobra 'persistent' flag here
 	Verbose bool `yaml:"verbose" env:"APP_VERBOSE" cflag:"verbose,v" usage:"Verbose output" cobra:"root,persistent"`
@@ -420,6 +423,17 @@ err = conftagz.Process(nil, &anotherstuct)
 ```
 
 See [`examples/examplecobra`](examples/examplecobra/app.go) for a fully working example.
+
+### Slices with cobra
+
+`[]string` fields are supported and are registered as repeatable flags, using cobra/pflag's `StringArray`
+behavior: repeat the flag once per value and each occurrence adds one element, in the order given.
+Values are *not* split on commas, so `--label geo=139.65,35.67` is a single element. If the flag is not
+present on the command line the field is left as-is, so any value from yaml, `env:` or `default:` survives.
+
+Slices of any other element type (`[]int`, `[]float64`, etc.) are not supported with `cflag:`, nor are
+pointers to slices - these return an error from `PreProcessCobraFlags()`. The stdlib `flag:` tag does
+support numeric slices, see the `flag:` section.
 
 ## Examples
 

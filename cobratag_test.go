@@ -469,28 +469,220 @@ func TestCobrasFieldsWithStruct(t *testing.T) {
 // 	assert.Equal(t, "", mystruct.InnerPtr.Stuff1)
 // }
 
-// func TestCobrasFieldsWithSlice(t *testing.T) {
-// 	mystruct := MyStructWithSlice{"", nil}
+// []string fields are supported on the cobra path via pflag's StringArray:
+// repeat the flag to add values, values are not split on commas.
+type MyStructCobraWithSlice struct {
+	Field1 string   `yaml:"important" cflag:"important" cobra:"root"`
+	Labels []string `cflag:"label" usage:"a label in key=value form" cobra:"root"`
+}
 
-// 	expected := []string{"Field1", "SliceField"}
+type MyStructCobraWithSliceShort struct {
+	Labels []string `cflag:"label,l" usage:"a label in key=value form" cobra:"root"`
+}
 
-// 	result, err := SubsistuteDefaults(&mystruct, nil)
-// 	if err != nil {
-// 		t.Errorf("Unexpected error: %v", err)
-// 	}
+type MyStructCobraWithSliceMultiCmd struct {
+	Items []string `cflag:"items" usage:"an item" cobra:"root,secondcmd"`
+}
 
-// 	if !reflect.DeepEqual(result, expected) {
-// 		t.Errorf("Expected %v, but got %v", expected, result)
-// 	}
+type MyStructCobraWithBadSlice struct {
+	Nums []int `cflag:"nums" usage:"a number" cobra:"root"`
+}
 
-// 	expectedslice := []string{"Apple", "Banana"}
+// repeated flags accumulate, in the order seen
+func TestCobraFieldsWithStringSlice(t *testing.T) {
+	ResetGlobals()
+	mystruct := MyStructCobraWithSlice{}
 
-// 	assert.Equal(t, mystruct.Field1, "Apple")
-// 	if !reflect.DeepEqual(mystruct.SliceField, expectedslice) {
-// 		t.Errorf("Expected %v, but got %v", expectedslice, mystruct.SliceField)
-// 	}
+	argz := []string{"--important", "Banana", "--label", "a=b", "--label", "c=d", "--label", "e=f"}
 
-// }
+	var rootCmd = &cobra.Command{
+		Use:   "app",
+		Short: "A simple CLI application",
+	}
+	RegisterCobraCmd("root", rootCmd)
+	rootCmd.RunE = func(cmd *cobra.Command, args []string) error {
+		return nil
+	}
+
+	err := PreProcessCobraFlags(&mystruct, nil)
+	if err != nil {
+		t.Errorf("Unexpected error in PreProcessCobraFlags: %v", err)
+		return
+	}
+	err = rootCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in ParseFlags: %v", err)
+		return
+	}
+	err = PostProcessCobraFlags()
+	if err != nil {
+		t.Errorf("Unexpected error in PostProcessCobraFlags: %v", err)
+		return
+	}
+
+	assert.Equal(t, "Banana", mystruct.Field1)
+	assert.Equal(t, []string{"a=b", "c=d", "e=f"}, mystruct.Labels)
+}
+
+// a value with a comma in it stays a single element (no comma splitting)
+func TestCobraFieldsWithStringSliceCommaValue(t *testing.T) {
+	ResetGlobals()
+	mystruct := MyStructCobraWithSlice{}
+
+	argz := []string{"--label", "geo=139.65,35.67", "--label", "plain"}
+
+	var rootCmd = &cobra.Command{
+		Use:   "app",
+		Short: "A simple CLI application",
+	}
+	RegisterCobraCmd("root", rootCmd)
+
+	err := PreProcessCobraFlags(&mystruct, nil)
+	if err != nil {
+		t.Errorf("Unexpected error in PreProcessCobraFlags: %v", err)
+		return
+	}
+	err = rootCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in ParseFlags: %v", err)
+		return
+	}
+	err = PostProcessCobraFlags()
+	if err != nil {
+		t.Errorf("Unexpected error in PostProcessCobraFlags: %v", err)
+		return
+	}
+
+	assert.Equal(t, []string{"geo=139.65,35.67", "plain"}, mystruct.Labels)
+}
+
+// no flag given - whatever was already in the struct is left alone
+func TestCobraFieldsWithStringSliceNoFlag(t *testing.T) {
+	ResetGlobals()
+	mystruct := MyStructCobraWithSlice{Field1: "Apple", Labels: []string{"fromyaml", "alsofromyaml"}}
+
+	argz := []string{"--important", "Banana"}
+
+	var rootCmd = &cobra.Command{
+		Use:   "app",
+		Short: "A simple CLI application",
+	}
+	RegisterCobraCmd("root", rootCmd)
+
+	err := PreProcessCobraFlags(&mystruct, nil)
+	if err != nil {
+		t.Errorf("Unexpected error in PreProcessCobraFlags: %v", err)
+		return
+	}
+	err = rootCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in ParseFlags: %v", err)
+		return
+	}
+	err = PostProcessCobraFlags()
+	if err != nil {
+		t.Errorf("Unexpected error in PostProcessCobraFlags: %v", err)
+		return
+	}
+
+	assert.Equal(t, "Banana", mystruct.Field1)
+	assert.Equal(t, []string{"fromyaml", "alsofromyaml"}, mystruct.Labels)
+}
+
+// the shorthand (stag) variant of the flag registers and accumulates too
+func TestCobraFieldsWithStringSliceShorthand(t *testing.T) {
+	ResetGlobals()
+	mystruct := MyStructCobraWithSliceShort{}
+
+	argz := []string{"-l", "a=b", "-l", "c=d"}
+
+	var rootCmd = &cobra.Command{
+		Use:   "app",
+		Short: "A simple CLI application",
+	}
+	RegisterCobraCmd("root", rootCmd)
+
+	err := PreProcessCobraFlags(&mystruct, nil)
+	if err != nil {
+		t.Errorf("Unexpected error in PreProcessCobraFlags: %v", err)
+		return
+	}
+	assert.NotNil(t, rootCmd.Flags().ShorthandLookup("l"))
+	err = rootCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in ParseFlags: %v", err)
+		return
+	}
+	err = PostProcessCobraFlags()
+	if err != nil {
+		t.Errorf("Unexpected error in PostProcessCobraFlags: %v", err)
+		return
+	}
+
+	assert.Equal(t, []string{"a=b", "c=d"}, mystruct.Labels)
+}
+
+// a slice of a non-string type is an error, not a panic
+func TestCobraFieldsWithNonStringSliceShouldFail(t *testing.T) {
+	ResetGlobals()
+	mystruct := MyStructCobraWithBadSlice{}
+
+	var rootCmd = &cobra.Command{
+		Use:   "app",
+		Short: "A simple CLI application",
+	}
+	RegisterCobraCmd("root", rootCmd)
+
+	err := PreProcessCobraFlags(&mystruct, nil)
+	if err == nil {
+		t.Errorf("Should have had an error for []int")
+		return
+	}
+	t.Logf("Expected error: %v", err)
+	assert.Contains(t, err.Error(), "slice element type unsupported")
+	assert.Nil(t, rootCmd.Flags().Lookup("nums"))
+}
+
+// a []string flag declared on more than one command registers on each of them
+func TestCobraFieldsWithStringSliceMultiCommand(t *testing.T) {
+	ResetGlobals()
+	mystruct := MyStructCobraWithSliceMultiCmd{}
+
+	var rootCmd = &cobra.Command{
+		Use:   "app",
+		Short: "A simple CLI application",
+	}
+	var secondCmd = &cobra.Command{
+		Use:   "secondcmd",
+		Short: "A simple CLI second command",
+	}
+	RegisterCobraCmd("root", rootCmd)
+	RegisterCobraCmd("secondcmd", secondCmd)
+	rootCmd.AddCommand(secondCmd)
+
+	err := PreProcessCobraFlags(&mystruct, nil)
+	if err != nil {
+		t.Errorf("Unexpected error in PreProcessCobraFlags: %v", err)
+		return
+	}
+	// the flag should exist on both commands
+	assert.NotNil(t, rootCmd.Flags().Lookup("items"))
+	assert.NotNil(t, secondCmd.Flags().Lookup("items"))
+
+	argz := []string{"--items", "one", "--items", "two,three"}
+	err = secondCmd.ParseFlags(argz)
+	if err != nil {
+		t.Errorf("Unexpected error in ParseFlags: %v", err)
+		return
+	}
+	err = PostProcessCobraFlags()
+	if err != nil {
+		t.Errorf("Unexpected error in PostProcessCobraFlags: %v", err)
+		return
+	}
+
+	assert.Equal(t, []string{"one", "two,three"}, mystruct.Items)
+}
 
 // func TestCobrasCustomFunc(t *testing.T) {
 // 	mystruct := AStructWithCustom{}

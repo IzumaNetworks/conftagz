@@ -40,6 +40,8 @@ type cobraFlagSetRetriever struct {
 	varbool bool
 	varint  int64
 	varuint uint64
+	// used for []string fields - registered via pflag's StringArrayVar (repeatable flag)
+	varstrslice []string
 }
 
 type ProcessedCobraTags struct {
@@ -243,6 +245,40 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 						myflag.Uint64Var(&retriever.varuint, tag, 0, usagetag)
 					}
 					//					myflags.Uint64Var(&retriever.varuint, tag, 0, usagetag)
+				}
+			}
+		case reflect.Slice:
+			// Only slices of strings are supported on the cobra path. The flag is registered
+			// with pflag's StringArray, which accumulates one value per occurrence of the flag
+			// and does not split values on commas. Note a pointer to a slice (*[]string) is
+			// intentionally not supported - see setflagValPtr.
+			if fieldValue.Type().Elem().Kind() != reflect.String {
+				return nil, fmt.Errorf("(flag) %s slice element type unsupported (setFlagVal)", fieldValue.Type().String())
+			}
+			sliceType := fieldValue.Type()
+			retrieverfunc := func(flagname string, r *cobraFlagSetRetriever) (err error) {
+				if len(r.varstrslice) > 0 {
+					newSlice := reflect.MakeSlice(sliceType, 0, len(r.varstrslice))
+					for _, raw := range r.varstrslice {
+						newSlice = reflect.Append(newSlice, reflect.ValueOf(raw).Convert(sliceType.Elem()))
+					}
+					fieldValue.Set(newSlice)
+				}
+				return nil
+			}
+			if existing != nil {
+				existing.retrievers = append(existing.retrievers, retrieverfunc)
+			} else {
+				retriever = &cobraFlagSetRetriever{fieldName: fieldName, fieldValue: fieldValue}
+				retriever.retrievers = append(retriever.retrievers, retrieverfunc)
+				if len(stag) > 0 {
+					for _, myflag := range myflags {
+						myflag.StringArrayVarP(&retriever.varstrslice, tag, stag, nil, usagetag)
+					}
+				} else {
+					for _, myflag := range myflags {
+						myflag.StringArrayVar(&retriever.varstrslice, tag, nil, usagetag)
+					}
 				}
 			}
 		default:
@@ -483,6 +519,8 @@ func ProcessCobraTags(somestruct interface{}, opts *CobraFieldSubstOpts) (ret *P
 		// 			return nil
 		// 		})
 		// 	}
+		// a pointer to a slice (i.e. *[]string) is intentionally not supported - it falls
+		// through to the default branch below
 		default:
 			return nil, fmt.Errorf("map (env) val for %s underlying type unsupported (setFlagValPtr)", fieldValue.Type().String())
 		}
